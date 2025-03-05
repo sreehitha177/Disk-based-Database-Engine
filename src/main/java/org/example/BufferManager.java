@@ -90,7 +90,7 @@ public abstract class BufferManager {
      * @param pageData The raw byte data of the page
      * @return A page object
      */
-    protected abstract Object createPageObject(int pageId, byte[] pageData){
+    protected Object createPageObject(int pageId, byte[] pageData){
         // Define max number of rows per page
     int maxRows = 37; // Adjust based on actual row size and PAGE_SIZE constraints
 
