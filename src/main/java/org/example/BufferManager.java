@@ -90,7 +90,25 @@ public abstract class BufferManager {
      * @param pageData The raw byte data of the page
      * @return A page object
      */
-    protected abstract Object createPageObject(int pageId, byte[] pageData);
+    protected abstract Object createPageObject(int pageId, byte[] pageData){
+        // Define max number of rows per page
+    int maxRows = 37; // Adjust based on actual row size and PAGE_SIZE constraints
+
+    // Create an empty page object
+    PageImplementation page = new PageImplementation(pageId, maxRows);
+
+    // Deserialize the byte array into rows 
+    int rowSize = 110; // Define row size based on expected schema 
+    for (int offset = 0; offset + rowSize <= pageData.length; offset += rowSize) {
+        byte[] movieId = Arrays.copyOfRange(pageData, offset, offset + 10); // Example: first 10 bytes for movieId
+        byte[] title = Arrays.copyOfRange(pageData, offset + 10, offset + rowSize); // Next 100 bytes for title
+
+        Row row = new Row(movieId, title);
+        page.insertRow(row);
+    }
+
+    return page;
+    }
     
     /**
      * Checks if a page is pinned.
