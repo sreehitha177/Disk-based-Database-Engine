@@ -8,7 +8,7 @@ import java.io.IOException;
 
 //public class Utilities{
 //    // Loads the buffer manager with the imdb dataset
-//    public static void loadDataset(BufferManager bf, String filepath){
+//    public static void loadDataset(org.example.BufferManager bf, String filepath){
 //        try (BufferedReader br = new BufferedReader(new FileReader("/Users/sreehithanarayana/Downloads/title.basics.tsv"))) {
 //            String line;
 //            while ((line = br.readLine()) != null) {
@@ -19,7 +19,7 @@ import java.io.IOException;
 //
 //                System.out.println("Read Movie: " + data[0] + " - " + data[1]); // Print the read data
 //
-//                Page p = bf.createPage();
+//                org.example.Page p = bf.createPage();
 //                if (p.insertRow(row) == -1) {
 //                    bf.unpinPage(p.getPid());
 //                    p = bf.createPage();
@@ -38,7 +38,7 @@ import java.io.IOException;
 public class Utilities{
     // Loads the buffer manager with the IMDB dataset
 
-//    public static void loadDataset(BufferManager bf, String filepath) {
+//    public static void loadDataset(org.example.BufferManager bf, String filepath) {
 //        File file = new File(filepath);
 //        if (!file.exists()) {
 //            System.out.println("File not found: " + file.getAbsolutePath());
@@ -51,7 +51,7 @@ public class Utilities{
 //            String line = br.readLine();  // Read the header line
 //            System.out.println("Skipping header: " + line);
 //
-//            Page p = bf.createPage(); // Start with a new page
+//            org.example.Page p = bf.createPage(); // Start with a new page
 //
 //            while ((line = br.readLine()) != null) {
 //                String[] data = line.split("\t");
@@ -124,14 +124,14 @@ public class Utilities{
 //
 //        System.out.println("Using file path: " + filepath);
 //
-//        BufferManager bf = new BufferManager() {
+//        org.example.BufferManager bf = new org.example.BufferManager() {
 //            @Override
-//            Page getPage(int pageId) {
+//            org.example.Page getPage(int pageId) {
 //                return null;
 //            }
 //
 //            @Override
-//            Page createPage() {
+//            org.example.Page createPage() {
 //                return null;
 //            }
 //

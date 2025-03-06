@@ -1,3 +1,5 @@
+package org.example;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,5 +38,10 @@ public class PageImplementation implements Page {
     @Override
     public int getPid() {
         return pageId;
+    }
+
+    //  Add this method to allow controlled access to the rows
+    public List<Row> getRows() {
+        return rows;
     }
 }
