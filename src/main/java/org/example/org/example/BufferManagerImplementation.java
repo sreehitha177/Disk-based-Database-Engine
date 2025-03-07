@@ -77,6 +77,108 @@ public class BufferManagerImplementation extends BufferManager {
         dirtyPages.add(pageId);
         System.out.println("Page " + pageId + " marked as dirty.");
     }
+    @Override
+    public void unpinPage(int pageId) {
+        if (pinCount.containsKey(pageId) && pinCount.get(pageId) > 0) {
+            pinCount.put(pageId, pinCount.get(pageId) - 1);
+            System.out.println("Page " + pageId + " unpinned. New pin count: " + pinCount.get(pageId));
+        } else {
+            // Log if the page is not pinned or invalid
+            System.out.println("Page " + pageId + " is not pinned or doesn't exist.");
+        }
+    }
+
+
+//    private void evictPage() {
+//        for (int pageId : pageTable.keySet()) {
+//            if (pinCount.getOrDefault(pageId, 0) == 0) { // Only evict unpinned pages
+//                if (dirtyPages.contains(pageId)) {
+//                    writePageToDisk(pageTable.get(pageId));
+//                    dirtyPages.remove(pageId);
+//                }
+//                pageTable.remove(pageId);
+//                pinCount.remove(pageId);
+//                System.out.println("Page: "+pageId+" evicted.");
+//                return;
+//            }
+//        }
+//    }
+
+
+    private void evictPage() {
+        while (!lruQueue.isEmpty()) {
+            int lruPageId = lruQueue.peekFirst(); // Get LRU page
+            if (pinCount.getOrDefault(lruPageId, 0) == 0) { // Ensure it's unpinned
+                lruQueue.pollFirst(); // Remove from queue
+                if (dirtyPages.contains(lruPageId)) {
+                    writePageToDisk(pageTable.get(lruPageId));
+                    dirtyPages.remove(lruPageId);
+                }
+                pageTable.remove(lruPageId);
+                pinCount.remove(lruPageId);
+                System.out.println("Evicted LRU Page: " + lruPageId+", LRU queue after eviction: "+ lruQueue);
+                return;
+            } else {
+                lruQueue.removeFirst(); // Skip pinned pages
+                lruQueue.addLast(lruPageId); // Move to end (not evicted)
+            }
+        }
+    }
+
+
+    private PageImplementation loadPageFromDisk(int pageId) {
+        try (RandomAccessFile file = new RandomAccessFile(storageFile, "r")) {
+            file.seek(pageId * 4096L);
+            byte[] data = new byte[4096];
+            int bytesRead = file.read(data);
+            if (bytesRead == -1) return null;
+            PageImplementation page = deserializePage(data, pageId);
+            pageTable.put(pageId, page);
+            lruQueue.addLast(pageId);
+//            lruQueue.addLast(pageId);
+            pinCount.put(pageId, 1);
+            return page;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+    private void writePageToDisk(PageImplementation page) {
+        try (RandomAccessFile file = new RandomAccessFile(storageFile, "rw")) {
+            file.seek(page.getPid() * 4096L);
+            file.write(serializePage(page));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private byte[] serializePage(PageImplementation page) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (ObjectOutputStream out = new ObjectOutputStream(bos)) {
+            out.writeObject(page.getRows());
+            return bos.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new byte[0];
+        }
+    }
+
+
+    private PageImplementation deserializePage(byte[] data, int pageId) {
+        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(data))) {
+            List<Row> rows = (List<Row>) in.readObject();
+            PageImplementation page = new PageImplementation(pageId, 100);
+            rows.forEach(page::insertRow);
+            return page;
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            return new PageImplementation(pageId, 100);
+        }
+    }
+}
 
 
 
