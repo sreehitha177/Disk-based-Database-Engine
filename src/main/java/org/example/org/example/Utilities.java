@@ -1,81 +1,12 @@
 package org.example;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 
-//public class Utilities{
-//    // Loads the buffer manager with the imdb dataset
-//    public static void loadDataset(org.example.BufferManager bf, String filepath){
-//        try (BufferedReader br = new BufferedReader(new FileReader("/Users/sreehithanarayana/Downloads/title.basics.tsv"))) {
-//            String line;
-//            while ((line = br.readLine()) != null) {
-//                String[] data = line.split("\t");
-//                byte[] movieId = data[0].getBytes();
-//                byte[] title = data[1].substring(0, Math.min(30, data[1].length())).getBytes();
-//                Row row = new Row(movieId, title);
-//
-//                System.out.println("Read Movie: " + data[0] + " - " + data[1]); // Print the read data
-//
-//                org.example.Page p = bf.createPage();
-//                if (p.insertRow(row) == -1) {
-//                    bf.unpinPage(p.getPid());
-//                    p = bf.createPage();
-//                    p.insertRow(row);
-//                }
-//                bf.unpinPage(p.getPid());
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//}
-
-
-
-public class Utilities{
-    // Loads the buffer manager with the IMDB dataset
-
-//    public static void loadDataset(org.example.BufferManager bf, String filepath) {
-//        File file = new File(filepath);
-//        if (!file.exists()) {
-//            System.out.println("File not found: " + file.getAbsolutePath());
-//            return;
-//        } else {
-//            System.out.println("File found, proceeding with reading...");
-//        }
-//
-//        try (BufferedReader br = new BufferedReader(new FileReader(filepath))) {
-//            String line = br.readLine();  // Read the header line
-//            System.out.println("Skipping header: " + line);
-//
-//            org.example.Page p = bf.createPage(); // Start with a new page
-//
-//            while ((line = br.readLine()) != null) {
-//                String[] data = line.split("\t");
-//                if (data.length < 3) {
-//                    System.out.println("Skipping malformed line: " + line);
-//                    continue;
-//                }
-//
-//                byte[] movieId = data[0].getBytes();
-//                byte[] title = data[2].substring(0, Math.min(30, data[2].length())).getBytes();
-//                Row row = new Row(movieId, title);
-//
-//                if (p.insertRow(row) == -1) {  // If page is full, get a new page
-//                    bf.unpinPage(p.getPid());
-//                    p = bf.createPage();
-//                    p.insertRow(row);
-//                }
-//
-//                bf.unpinPage(p.getPid());
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
+public class Utilities {
+    private static BufferManager bufferManager;
 
 
     public static void loadDataset(String filepath) {
@@ -87,12 +18,26 @@ public class Utilities{
             System.out.println("File found, proceeding with reading...");
         }
 
-        try (BufferedReader br = new BufferedReader(new FileReader(filepath))) {
+
+        try (BufferedReader br = new BufferedReader(new FileReader(filepath, StandardCharsets.UTF_8))) {
             String line = br.readLine();  // Read the first line (header) and discard it
             System.out.println("Skipping header: " + line);
 
+
+            int currentPageId = 0;  // Start with the first page
+//            Page currentPage = bufferManager.getPage(currentPageId); // Retrieve page with id 0
+            Page currentPage = bufferManager.getPage(currentPageId);
+            if (currentPage == null) {
+                System.err.println("Error: Failed to load or create page " + currentPageId);
+                return; // Stop processing if we can't get a page
+            }
+            // Total number of rows processed
+            int totalRows = 0;
+
+
             while ((line = br.readLine()) != null) {
                 System.out.println("Raw Line: " + line);
+
 
                 // Split by tab and ensure there are enough columns
                 String[] data = line.split("\t");
@@ -101,57 +46,47 @@ public class Utilities{
                     continue;
                 }
 
+
                 String movieId = data[0];
                 String title = data[2];  // Assuming primaryTitle is the third column
-
                 System.out.println("Read Movie: " + movieId + " - " + title);
+
+
+                // Create Row object
+                Row row = new Row(movieId.getBytes(StandardCharsets.UTF_8), title.getBytes(StandardCharsets.UTF_8));
+
+
+                // Try inserting the row into the current page
+                int rowId = currentPage.insertRow(row);
+
+
+                if (rowId == -1) {
+                    // If the page is full, increment pageId and create a new page
+                    currentPageId++;  // Increment page ID to create a new page
+                    currentPage = bufferManager.getPage(currentPageId);  // Fetch the new page with updated ID
+                    rowId = currentPage.insertRow(row);  // Insert the row into the new page
+                    System.out.println("Page " + currentPageId + " is full, moving to the next page.");
+                }
+
+
+                totalRows++;  // Count the number of rows inserted
+                System.out.println("Inserted Row with ID: " + rowId + " on Page ID: " + currentPage.getPid());
             }
+
+
+            System.out.println("Total rows processed: " + totalRows);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
 
-    //    public static void main(String[] args) {
-//        String filepath;
-//
-//        if (args.length < 1) {
-//            System.out.println("No file path provided, using default.");
-//            filepath = "/Users/sreehithanarayana/Downloads/title.basics.tsv"; // Default path
-//        } else {
-//            filepath = args[0];
-//        }
-//
-//        System.out.println("Using file path: " + filepath);
-//
-//        org.example.BufferManager bf = new org.example.BufferManager() {
-//            @Override
-//            org.example.Page getPage(int pageId) {
-//                return null;
-//            }
-//
-//            @Override
-//            org.example.Page createPage() {
-//                return null;
-//            }
-//
-//            @Override
-//            void markDirty(int pageId) {
-//            }
-//
-//            @Override
-//            void unpinPage(int pageId) {
-//            }
-//        };
-//
-//        loadDataset(bf, filepath);
-//    }
     public static void main(String[] args) {
+        // Initialize the BufferManagerImplementation with a buffer size of 10 pages
+        bufferManager = new BufferManagerImplementation(1024, "/Users/sreehithanarayana/Desktop/database.bin");
+
+
         String filepath = "/Users/sreehithanarayana/Downloads/title.basics.tsv"; // Use your correct path
         loadDataset(filepath);
     }
-
-
-
 }
-
