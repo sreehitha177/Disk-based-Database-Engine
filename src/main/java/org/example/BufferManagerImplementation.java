@@ -38,7 +38,7 @@ public class BufferManagerImplementation extends BufferManager {
         }
     }
 
-    @Override
+    /*@Override
     public Page getPage(int pageId) {
         if (pageTable.containsKey(pageId)) {
             lruQueue.remove(pageId);
@@ -50,6 +50,46 @@ public class BufferManagerImplementation extends BufferManager {
             throw new IllegalArgumentException("Page " + pageId + " does not exist.");
         }
         return loadPageFromDisk(pageId);
+    }*/
+
+//     @Override
+//     public Page getPage(int pageId) {
+//         if (pageTable.containsKey(pageId)) {
+//             lruQueue.remove(pageId);
+//             lruQueue.addLast(pageId);
+//             pinCount.put(pageId, pinCount.getOrDefault(pageId, 0) + 1);
+//             System.out.println("Accessed page: "+pageId+", Updated LRU queue: "+lruQueue);
+//             return pageTable.get(pageId);
+//         }
+
+
+//         // If page is not in memory, try loading it from disk
+//         Page page = loadPageFromDisk(pageId);
+//         if (page == null) {
+//             // If the page does not exist on disk, create a new page
+//             page = createPage();
+//             System.out.println("Page " + pageId + " not found. Creating a new one.");
+//         }
+//         return page;
+//     }
+
+
+
+    @Override
+    public Page getPage(int pageId){
+        if(pageTable.containsKey(pageId)){
+            lruQueue.remove(pageId);
+            lruQueue.addLast(pageId);
+            pinCount.put(pageId, pinCount.getOrDefault(pageId, 0)+1);
+            System.out.println("Accessed page: "+pageId+", Updated LRU queue: "+lruQueue);
+            return pageTable.get(pageId);
+        }
+        Page page = loadPageFromDisk(pageId);
+        if (page == null) {
+            page = createPage();
+            System.out.println("Page " + pageId + " not found. Creating a new one.");
+        }
+        return page;
     }
 
     @Override
@@ -61,6 +101,7 @@ public class BufferManagerImplementation extends BufferManager {
         pageTable.put(currentPageId, newPage);
         lruQueue.addLast(currentPageId);
         pinCount.put(currentPageId, 1);
+        currentPageId++;
         return newPage;
     }
 

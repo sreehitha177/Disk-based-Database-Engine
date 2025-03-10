@@ -66,9 +66,9 @@ public class Utilities {
 
     public static void main(String[] args) {
         // Initialize the BufferManagerImplementation with a buffer size of 100 pages
-        bufferManager = new BufferManagerImplementation(100, "C:\\Users\\Priya\\Desktop\\database.bin");
+        bufferManager = new BufferManagerImplementation(1024, "C:\\Users\\Priya\\Desktop\\database.bin");
 
-        // Path to the title.basics.tsv file
+        // Path to the title.basics.tsv file  ----CHANGE THIS TO YOUR DATASET FILE PATH
         String filepath = "C:\\Users\\Priya\\Desktop\\UMASS Sem 2\\645\\Lab 1\\645_Project-master\\src\\main\\resources\\data\\title.basics.tsv";
         loadDataset(filepath);
     }
