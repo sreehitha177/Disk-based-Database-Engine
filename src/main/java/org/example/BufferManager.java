@@ -1,7 +1,7 @@
 package org.example;
 
 public abstract class BufferManager {
-    // Configurable size of the buffer cache
+    //Configurable size of the buffer cache
     final int bufferSize;
 
     public BufferManager(int bufferSize) {
