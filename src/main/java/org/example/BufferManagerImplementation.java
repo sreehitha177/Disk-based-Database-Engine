@@ -1,173 +1,168 @@
 package org.example;
 
-import java.io.*;
+//import com.example.utils.BufferUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.*;
 
-public class BufferManagerImplementation extends BufferManager {
-    private final Map<Integer, Page> pageCache;          // Cache to store pages in memory
-    private int currentPageId;          // To racks the current page ID
-    private final Map<Integer, Integer> pinCount;           // To Track how many times a page is pinned
-    private final Set<Integer> dirtyPages;          // To stores IDs of dirty pages
-    private final Map<Integer, PageImplementation> pageTable;           // Maps page IDs to actual page objects
-    private final File storageFile;         //File used for storage
-    final Deque<Integer> lruQueue;          // Queue for LRU replacement
+//BufferManagerImplementation
+public class BufferManagerImplementation extends BufferManager{
 
-    //Constructor to initialize buffer manager
-    public BufferManagerImplementation(int bufferSize, String filePath) {
-        super(bufferSize);
-        //Checking if bufferSize is greater than zero
-        if (bufferSize <= 0) {
-            throw new IllegalArgumentException("Buffer size must be positive");
-        }
-        if (filePath == null) {
-            throw new IllegalArgumentException("File path cannot be null");
-        }
-        
-        this.lruQueue = new LinkedList<>();
-        this.pageCache = new HashMap<>();
-        this.currentPageId = 0;
-        this.pinCount = new HashMap<>();
-        this.dirtyPages = new HashSet<>();
-        this.pageTable = new HashMap<>();
-        this.storageFile = new File(filePath);
+    private final Map<Integer, PageImplementation> pageTable; // Maps pageId -> Page
+    private final LinkedHashMap<Integer, PageImplementation> lruCache; // Maintains LRU order
+    private final String filePath; // Database file
+    private final int pageSize = 4096; // 4KB page size
+    private int currentPageId = 0;
 
-        try {
-            if (!storageFile.exists()) {
-                storageFile.createNewFile();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create storage file: " + filePath, e);
-        }
+    public BufferManagerImplementation(int bufferSize) {
+        this(bufferSize, null);
     }
 
-    //Retrieving a page from memory or from disk
+    public BufferManagerImplementation(int bufferSize, String filePath) {
+        super(bufferSize);
+        this.pageTable = new HashMap<>();
+        this.lruCache = new LinkedHashMap<>(bufferSize, 0.75f, true);
+        if (filePath == null || filePath==" ") {
+            try {
+                File tempFile = File.createTempFile("buffer_manager_", ".bin");
+                this.filePath = tempFile.getAbsolutePath(); // Assign temp file path
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to create temp file", e);
+            }
+        } else {
+            this.filePath = filePath;
+        }
+        createFileIfNotExists();
+    }
+
     @Override
-    public Page getPage(int pageId){
-        //Checking if page is in memory
-        if(pageTable.containsKey(pageId)){
-            lruQueue.remove(pageId);
-            lruQueue.addLast(pageId);
-            pinCount.put(pageId, pinCount.getOrDefault(pageId, 0)+1);
-            System.out.println("Accessed page: "+pageId+", Updated LRU queue: "+lruQueue);
-            return pageTable.get(pageId);
+    public synchronized Page getPage(int pageId) {
+        if (pageTable.containsKey(pageId)) {
+            PageImplementation page = pageTable.get(pageId);
+            Utilities.pinAndUpdateLRU(page, lruCache); // ✅ Using Utility
+            return page;
         }
-        //Loading the page from disk if it isn't in memory
-        Page page = loadPageFromDisk(pageId);
-        if (page == null) {
-            page = createPage();
-            System.out.println("Page " + pageId + " not found. Creating a new one.");
+
+        if (pageTable.size() >= bufferSize && hasUnpinnedPages()) {
+            System.out.println("Buffer is full and all pages are pinned! Cannot fetch or create a page.");
+            return null;  // ✅ Return null instead of throwing an error
         }
+
+        PageImplementation page = loadPageFromDisk(pageId);
+        addToBuffer(page);
         return page;
     }
 
-    //Creating a new page in memory
     @Override
-    public Page createPage() {
-        if (pageTable.size() >= bufferSize) {
-            evictPage();
+    public synchronized Page createPage() {
+
+        // ✅ Before loading from disk, check if buffer is full and all pages are pinned
+        if (pageTable.size() >= bufferSize && hasUnpinnedPages()) {
+            System.out.println("Buffer is full and all pages are pinned! Cannot fetch or create a page.");
+            return null;  // ✅ Return null instead of throwing an error
         }
-        PageImplementation newPage = new PageImplementation(currentPageId, 100);
-        pageTable.put(currentPageId, newPage);
-        lruQueue.addLast(currentPageId);
-        pinCount.put(currentPageId, 1);
-        currentPageId++;
+
+        int newPageId = currentPageId++;
+        PageImplementation newPage = new PageImplementation(newPageId, pageSize);
+        addToBuffer(newPage);
         return newPage;
     }
 
-    //Marks a page as dirty for it to be written back to disk
-    @Override
-    public void markDirty(int pageId) {
-        dirtyPages.add(pageId);
+
+    private void addToBuffer(PageImplementation page) {
+        if (pageTable.size() >= bufferSize) {
+            evictPage(); // ✅ Evict if buffer is full
+        }
+
+        pageTable.put(page.getPid(), page);
+        Utilities.pinAndUpdateLRU(page,lruCache); // ✅ Use helper function
     }
 
-    //Unpins a page allowing it to be evicted
+
     @Override
-    public void unpinPage(int pageId) {
-        pinCount.put(pageId, Math.max(0, pinCount.getOrDefault(pageId, 0) - 1));
+    public synchronized void markDirty(int pageId) {
+        if (pageTable.containsKey(pageId)) {
+            pageTable.get(pageId).markDirty();
+        }
     }
 
-    //Evicts a page if needed
-    private void evictPage() {
-        while (!lruQueue.isEmpty()) {
-            int lruPageId = lruQueue.peekFirst();
-            if (pinCount.getOrDefault(lruPageId, 0) == 0) {
-                lruQueue.pollFirst();
-                if (dirtyPages.contains(lruPageId)) {
-                    writePageToDisk(pageTable.get(lruPageId));
-                    dirtyPages.remove(lruPageId);
-                }
-                pageTable.remove(lruPageId);
-                pinCount.remove(lruPageId);
-                return;
-            } else {
-                lruQueue.removeFirst();
-                lruQueue.addLast(lruPageId);
+    @Override
+    public synchronized void unpinPage(int pageId) {
+        if (pageTable.containsKey(pageId)) {
+            PageImplementation page = pageTable.get(pageId);
+            page.unpin();
+        }
+    }
+
+    private boolean hasUnpinnedPages() {
+        for (PageImplementation page : pageTable.values()) {
+            if (page.getPinCount() == 0) {
+                return false; // ✅ There is an unpinned page that can be evicted
             }
         }
+        return true; // ❌ No unpinned pages, buffer is fully pinned
     }
 
-    //Loads a page from the disk into memory
+    private void evictPage() {
+        Iterator<Map.Entry<Integer, PageImplementation>> it = lruCache.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Integer, PageImplementation> entry = it.next();
+            PageImplementation page = entry.getValue();
+            if (page.getPinCount() == 0) { // ✅ Evict only unpinned pages
+                if (page.isDirty()) {
+                    writePageToDisk(page);
+                }
+                pageTable.remove(page.getPid());
+                it.remove();
+                return;
+            }
+        }
+        System.err.println(("All pages are pinned, no eviction possible!"));
+    }
+
     private PageImplementation loadPageFromDisk(int pageId) {
-        try (RandomAccessFile file = new RandomAccessFile(storageFile, "r")) {
-            file.seek(pageId * 4096L);
-            byte[] data = new byte[4096];
-            int bytesRead = file.read(data);
-            if (bytesRead == -1) return null;
-            PageImplementation page = deserializePage(data, pageId);
-            pageTable.put(pageId, page);
-            lruQueue.addLast(pageId);
-            pinCount.put(pageId, 1);
-            return page;
+        try (RandomAccessFile file = new RandomAccessFile(filePath, "r")) {
+            file.seek((long) pageId * pageSize);
+            byte[] data = new byte[pageSize];
+            file.readFully(data);
+            if(isEmpty(data)) throw new IOException();
+            return new PageImplementation(pageId, data);
         } catch (IOException e) {
-            return null;
+            return new PageImplementation(pageId, pageSize); // New empty page if not found
         }
     }
 
-    //Writes a page back to disk from memory
+    // Check if all bytes are zero
+    private boolean isEmpty(byte[] data) {
+        for (byte b : data) {
+            if (b != 0) return false;
+        }
+        return true;
+    }
+
     private void writePageToDisk(PageImplementation page) {
-        try (RandomAccessFile file = new RandomAccessFile(storageFile, "rw")) {
-            file.seek(page.getPid() * 4096L);
-            file.write(serializePage(page));
+        try (RandomAccessFile file = new RandomAccessFile(filePath, "rw")) {
+            file.seek((long) page.getPid() * pageSize);
+            file.write(page.getData());
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    //Checks if a page is on disk
-    private boolean isPageOnDisk(int pageId) {
-        return storageFile.exists();
-    }
-
-    //Serializes a page into byte array
-    private byte[] serializePage(PageImplementation page) {
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
-             ObjectOutputStream out = new ObjectOutputStream(bos)) {
-            out.writeObject(page.getRows());
-            return bos.toByteArray();
+    private void createFileIfNotExists() {
+        File file = new File(filePath);
+        try {
+            if (!file.exists()) {
+                file.createNewFile(); // ✅ Creates the file if it doesn’t exist
+            }
+            try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
+                raf.setLength(0); // ✅ Clears the file content
+            }
         } catch (IOException e) {
-            return new byte[0];
+            e.printStackTrace();
         }
     }
 
-    //Deserializes a byte array into a page object
-    private PageImplementation deserializePage(byte[] data, int pageId) {
-        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(data))) {
-            List<Row> rows = (List<Row>) in.readObject();
-            PageImplementation page = new PageImplementation(pageId, 100);
-            rows.forEach(page::insertRow);
-            return page;
-        } catch (IOException | ClassNotFoundException e) {
-            return new PageImplementation(pageId, 100);
-        }
-    }
-
-    //Returns dirty pages
-    public Set<Integer> getDirtyPages() {
-        return dirtyPages;
-    }
-
-    //Returns the pin count map
-    public Map<Integer, Integer> getPinCount() {
-        return pinCount;
-    }
 }
