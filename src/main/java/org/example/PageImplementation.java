@@ -57,7 +57,7 @@ public class PageImplementation implements Page{
     @Override
     public int insertRow(Row row) {
         if (nextFreeOffset + Row.ROW_SIZE > data.length) {
-            return -1; // ❌ Page full
+            return -1; //  Page full
         }
         ByteBuffer buffer = ByteBuffer.wrap(data);
         buffer.position(nextFreeOffset);

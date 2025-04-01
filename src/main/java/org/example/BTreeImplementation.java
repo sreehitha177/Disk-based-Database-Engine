@@ -1,0 +1,145 @@
+package org.example;
+
+import java.util.List;
+
+public class BTreeImplementation<K extends Comparable<K>> {
+    private BTreeNode root;
+    private final int maxEntries;
+
+    public BTreeImplementation(int maxEntries) {
+        this.maxEntries = maxEntries;
+        this.root = new BTreeLeafNode<>(0, maxEntries); // Start with an empty root node
+    }
+
+    public void insert(K key, Rid rid) {
+        BTreeNode currentNode = root;
+
+        if (currentNode.isLeaf()) {
+            BTreeLeafNode<K> leafNode = (BTreeLeafNode<K>) currentNode;
+            leafNode.insert(key, rid);
+
+            if (leafNode.isFull()) {
+                BTreeLeafNode<K> newLeafNode = leafNode.split();
+                BTreeNonLeafNode<K> newRoot = new BTreeNonLeafNode<>(maxEntries);
+                newRoot.insert(newLeafNode.getEntries().firstKey(), newLeafNode);
+                newRoot.getChildren().add(0, leafNode);
+                this.root = newRoot;
+            }
+        } else {
+            insertNonLeaf(key, rid, null, null);
+        }
+    }
+
+
+//    public void insert(K key, Rid rid) {
+//        System.out.println("Attempting to insert key: " + key);
+//
+//        if (root == null) {
+//            root = new BTreeLeafNode<>();
+//        }
+//
+//        BTreeLeafNode<K> leaf = findLeafNode(key);
+//        leaf.insert(key, rid);
+//
+//        // If leaf overflows, split and propagate upwards
+//        if (leaf.isOverfull()) {
+//            splitLeafNode(leaf);
+//        }
+//    }
+
+
+    private void insertNonLeaf(K key, Rid rid, BTreeNode parent, BTreeNonLeafNode<K> parentNode) {
+        BTreeNode currentNode = root;
+        while (!currentNode.isLeaf()) {
+            BTreeNonLeafNode<K> nonLeafNode = (BTreeNonLeafNode<K>) currentNode;
+            BTreeNode childNode = nonLeafNode.getChild(key);
+
+            if (childNode.isFull()) {
+                BTreeNonLeafNode<K> newNonLeafNode = ((BTreeNonLeafNode<K>) childNode).split();
+                nonLeafNode.insert(key, newNonLeafNode);
+                insertIntoParent(nonLeafNode, newNonLeafNode);
+                return;
+            }
+            currentNode = childNode;
+        }
+        ((BTreeLeafNode<K>) currentNode).insert(key, rid);
+    }
+
+
+    // A generic insert into parent method that can handle both leaf and non-leaf nodes.
+    private void insertIntoParent(BTreeNode<K> oldNode, BTreeNode<K> newNode) {
+        // Find the parent of the old node
+//        BTreeNode<K> parentNode = findParentNode(root, oldNode);
+//
+//        if (parentNode != null && parentNode instanceof BTreeNonLeafNode) {
+//            BTreeNonLeafNode<K> nonLeafNode = (BTreeNonLeafNode<K>) parentNode;
+//
+//            // Insert the newNode into the parent node
+//            K keyToInsert = newNode instanceof BTreeLeafNode
+//                    ? ((BTreeLeafNode<K>) newNode).getEntries().firstKey()  // For leaf node, use first key
+//                    : ((BTreeNonLeafNode<K>) newNode).getKeys().get(0);    // For non-leaf node, use the first key
+//
+//            nonLeafNode.insert(keyToInsert, newNode);
+//
+//            // If the parent node is full, split it
+//            if (nonLeafNode.isFull()) {
+//                BTreeNonLeafNode<K> newParentNode = nonLeafNode.split();
+//                insertIntoParent(nonLeafNode, newParentNode);
+//            }
+//        }
+
+        if (root == oldNode) {
+            BTreeNonLeafNode<K> newRoot = new BTreeNonLeafNode<>(maxEntries);
+
+            newRoot.insert(newNode instanceof BTreeLeafNode
+                    ? ((BTreeLeafNode<K>) newNode).getEntries().firstKey()
+                    : ((BTreeNonLeafNode<K>) newNode).getKeys().get(0), newNode);
+
+            newRoot.getChildren().add(0, oldNode);
+            this.root = newRoot;
+            return;
+        }
+    }
+
+
+
+    private BTreeNode findParentNode(BTreeNode currentNode, BTreeNode childNode) {
+        // Traversal logic to find the parent node of the given childNode
+        if (currentNode.isLeaf()) {
+            return null; // Leaf nodes do not have children, so no parent can be found here.
+        }
+
+        BTreeNonLeafNode<K> nonLeafNode = (BTreeNonLeafNode<K>) currentNode;
+
+        // Iterate through the children of the current node
+        for (BTreeNode<K> child : nonLeafNode.getChildren()) {
+            if (child == childNode) {
+                return nonLeafNode; // Found the parent!
+            }
+
+            // Recursively check in the subtree
+            BTreeNode<K> potentialParent = findParentNode(child, childNode);
+            if (potentialParent != null) {
+                return potentialParent; // If found in recursion, return immediately.
+            }
+        }
+        return null; // You need to implement this logic as needed
+    }
+
+//    public List<Rid> search(K key) {
+//        BTreeNode currentNode = root;
+//        if (currentNode.isLeaf()) {
+//            BTreeLeafNode<K> leafNode = (BTreeLeafNode<K>) currentNode;
+//            return leafNode.search(key);
+//        }
+//        return null; // Handle non-leaf search logic here
+//    }
+    public List<Rid> search(K key) {
+        BTreeNode currentNode = root;
+        while (!currentNode.isLeaf()) {
+            BTreeNonLeafNode<K> nonLeafNode = (BTreeNonLeafNode<K>) currentNode;
+            currentNode = nonLeafNode.getChild(key);
+        }
+        return ((BTreeLeafNode<K>) currentNode).search(key);
+    }
+}
