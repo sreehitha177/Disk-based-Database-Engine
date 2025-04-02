@@ -1,6 +1,8 @@
 package org.example;
 
+//Page
 public interface Page {
+
     /**
      * Fetches a row from the page by its row ID.
      * @param rowId The ID of the row to retrieve.
@@ -26,4 +28,9 @@ public interface Page {
      * @return page id of this page
      */
     int getPid();
+
+
+    byte[] getData();
+    void setData(byte[] data);
+    void markDirty();
 }
