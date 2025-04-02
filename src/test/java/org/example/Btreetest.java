@@ -14,12 +14,14 @@ public class Btreetest{
         bTree.insert(10, new Rid(1, 0));
         bTree.insert(20, new Rid(2, 0));
         bTree.insert(30, new Rid(3, 0));
+        bTree.insert(40, new Rid(4, 0));
 
-        List<Rid> result = bTree.search(20);
+        int k=40;
+        List<Rid> result = bTree.search(k);
         if (result.isEmpty()) {
-            System.out.println("Test Failed: Key 20 not found!");
+            System.out.println("Test Failed: Key "+k+" not found!");
         } else {
-            System.out.println("Test Passed: Key 20 found!");
+            System.out.println("Test Passed: Key "+k+" found!");
         }
     }
 }

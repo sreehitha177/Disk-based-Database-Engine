@@ -56,15 +56,67 @@ public class BTreeNonLeafNode<K extends Comparable<K>> implements BTreeNode {
         }
 
         keys.add(insertIndex, key);  // Inserting key at the correct position
-        children.add(insertIndex + 1, child); // Adding child at the right index
+//        System.out.println("Adding into key failing");
+        System.out.println(child);
+        children.add(insertIndex, child); // Adding child at the right index
+//        System.out.println("Adding into children failing");
     }
 
     // Get the child node that corresponds to the given key
+//    public BTreeNode getChild(K key) {
+//        int pos = Collections.binarySearch(keys, key);
+//        if (pos < 0) pos = -pos - 1; // Find the correct position
+//        return children.get(pos);
+//    }
+
+
+//    public BTreeNode getChild(K key) {
+//        if (children.isEmpty()) {
+//            System.out.println("Error: Attempted to get child from an empty node!");
+//            return null; // Or throw an exception based on your implementation
+//        }
+//
+//        System.out.println(keys);
+//        int pos = Collections.binarySearch(keys, key);
+//        if (pos < 0) pos = -pos - 1; // Find the correct position
+//
+//        // Ensure `pos` is within bounds
+//        if (pos >= children.size()) {
+//            System.out.println("Warning: Computed child index out of bounds, adjusting to last child.");
+//            pos = children.size() - 1;
+//        }
+//
+//        System.out.println("Key: " + key + " - Redirecting to child at index: " + pos);
+//        return children.get(pos);
+//    }
+
+
     public BTreeNode getChild(K key) {
+        if (children.isEmpty()) {
+            System.out.println("Error: Attempted to get child from an empty node!");
+            return null; // Or throw an exception if desired
+        }
+
+        System.out.println("Internal node keys: " + keys);
+
         int pos = Collections.binarySearch(keys, key);
-        if (pos < 0) pos = -pos - 1; // Find the correct position
+        if (pos < 0) {
+            pos = -pos - 1; // Get the correct child position
+        } else {
+            pos = pos + 1;  // If key exists, move to the right child
+        }
+
+        // Ensure pos is within valid bounds
+        if (pos >= children.size()) {
+            System.out.println("Warning: Computed child index out of bounds, adjusting to last child.");
+            pos = children.size() - 1;
+        }
+
+        System.out.println("Key: " + key + " -> Redirecting to child at index: " + pos);
         return children.get(pos);
     }
+
+
 
     // Split the node when it becomes full
     public BTreeNonLeafNode<K> split() {

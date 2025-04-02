@@ -134,12 +134,41 @@ public class BTreeImplementation<K extends Comparable<K>> {
 //        }
 //        return null; // Handle non-leaf search logic here
 //    }
+//    public List<Rid> search(K key) {
+//        BTreeNode currentNode = root;
+//        while (!currentNode.isLeaf()) {
+//            BTreeNonLeafNode<K> nonLeafNode = (BTreeNonLeafNode<K>) currentNode;
+//            currentNode = nonLeafNode.getChild(key);
+//        }
+//        return ((BTreeLeafNode<K>) currentNode).search(key);
+//    }
+
+
     public List<Rid> search(K key) {
+        System.out.println("Starting search for key: " + key);
+
         BTreeNode currentNode = root;
+
+        // Traverse down the tree until a leaf node is reached
         while (!currentNode.isLeaf()) {
             BTreeNonLeafNode<K> nonLeafNode = (BTreeNonLeafNode<K>) currentNode;
+            System.out.println("Current node is a non-leaf node. Searching for child containing key: " + key);
+
             currentNode = nonLeafNode.getChild(key);
+
+            System.out.println("Moving to child node...");
         }
-        return ((BTreeLeafNode<K>) currentNode).search(key);
+
+        System.out.println("Reached leaf node. Searching for key: " + key);
+        List<Rid> result = ((BTreeLeafNode<K>) currentNode).search(key);
+
+        if (result.isEmpty()) {
+            System.out.println("Key " + key + " not found in the leaf node.");
+        } else {
+            System.out.println("Key " + key + " found with values: " + result);
+        }
+
+        return result;
     }
+
 }

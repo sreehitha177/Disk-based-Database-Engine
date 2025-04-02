@@ -53,6 +53,7 @@ public class BTreeLeafNode<K> implements BTreeNode {
 
         if (!entries.containsKey(key)) {
             System.out.println("Key " + key + " not found, creating new entry.");
+//            entries.put(key, new ArrayList<>());
         } else {
             System.out.println("Key " + key + " already exists, appending Rid.");
         }
@@ -66,8 +67,18 @@ public class BTreeLeafNode<K> implements BTreeNode {
     }
 
     public List<Rid> search(K key) {
-        return entries.getOrDefault(key, Collections.emptyList());
+
+        List<Rid> result = entries.getOrDefault(key, Collections.emptyList());
+
+        if (result.isEmpty()) {
+            System.out.println("Search Key " + key + " not found in leaf node.");
+        } else {
+            System.out.println("Search Key " + key + " found with RIDs: " + result);
+        }
+
+        return result;
     }
+
 
 
     public int getNextPageIndex() {
@@ -78,23 +89,53 @@ public class BTreeLeafNode<K> implements BTreeNode {
         this.nextPageIndex = nextPageIndex;
     }
     // Split function for leaf node
+//    public BTreeLeafNode<K> split() {
+//        int midIndex = entries.size() / 2;
+//        List<K> keys = new ArrayList<>(entries.keySet());
+//        BTreeLeafNode<K> newLeafNode = new BTreeLeafNode<>(index + 1, maxEntries);
+//
+//        // Move the second half of the keys and entries to the new node
+//        for (int i = midIndex; i < keys.size(); i++) {
+//            K key = keys.get(i);
+//            newLeafNode.entries.put(key, entries.remove(key));
+//        }
+//
+//        newLeafNode.setNextPageIndex(this.nextPageIndex);
+//        this.nextPageIndex = newLeafNode.index;
+//
+//        // Return the key of the middle element (the first key in the second half)
+//        return newLeafNode;
+//    }
+
     public BTreeLeafNode<K> split() {
+        System.out.println("Splitting leaf node with index: " + index);
         int midIndex = entries.size() / 2;
         List<K> keys = new ArrayList<>(entries.keySet());
+
+        System.out.println("Current keys before split: " + keys);
+        System.out.println("Mid index: " + midIndex);
+
         BTreeLeafNode<K> newLeafNode = new BTreeLeafNode<>(index + 1, maxEntries);
 
         // Move the second half of the keys and entries to the new node
         for (int i = midIndex; i < keys.size(); i++) {
             K key = keys.get(i);
             newLeafNode.entries.put(key, entries.remove(key));
+            System.out.println("Moving key: " + key + " to new leaf node with index: " + newLeafNode.index);
         }
 
         newLeafNode.setNextPageIndex(this.nextPageIndex);
         this.nextPageIndex = newLeafNode.index;
 
-        // Return the key of the middle element (the first key in the second half)
+        System.out.println("New leaf node created with index: " + newLeafNode.index);
+        System.out.println("Keys in original leaf node after split: " + entries.keySet());
+        System.out.println("Keys in new leaf node: " + newLeafNode.entries.keySet());
+        System.out.println("Updated nextPageIndex: " + this.nextPageIndex);
+
+        // Return the new leaf node
         return newLeafNode;
     }
+
 
 
 
