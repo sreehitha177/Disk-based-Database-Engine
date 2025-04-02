@@ -1,7 +1,8 @@
 package org.example;
 
+//BufferManager
 public abstract class BufferManager {
-    // Configurable size of the buffer cache
+    //Configurable size of the buffer cache
     final int bufferSize;
 
     public BufferManager(int bufferSize) {
@@ -34,4 +35,5 @@ public abstract class BufferManager {
      * @param pageId The ID of the page to unpin.
      */
     public abstract void unpinPage(int pageId);
+
 }
