@@ -44,6 +44,13 @@ public class BufferManagerImplementation extends BufferManager{
      */
     public void registerFile(String fileId, String filePath) {
         System.out.println("Registering file: " + fileId + " at path: " + filePath);
+
+        // Ensure parent directories exist
+        File file = new File(filePath);
+        File parentDir = file.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs();
+        }
         
         if (!filePageTables.containsKey(fileId)) {
             filePageTables.put(fileId, new HashMap<>());

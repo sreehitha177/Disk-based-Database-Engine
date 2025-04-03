@@ -17,7 +17,7 @@ public class TestRunner {
         DatabaseManager dbManager = new DatabaseManager(2048, RECORD_LIMIT);
         
         // Path to the title.basics.tsv file  ----CHANGE THIS TO YOUR ACTUAL DATASET FILE PATH
-        String filepath = "C:\\Users\\Priya\\Desktop\\UMASS Sem 2\\645\\Lab 1\\645-Lab\\src\\main\\resources\\data\\title.basics.tsv"; // Update this with your actual path
+        String filepath = "C:\\Users\\varsh\\OneDrive\\Desktop\\title.basics.tsv"; // Update this with your actual path
         
         try {
             // Test C1: Build index on title attribute

@@ -3,6 +3,9 @@ package org.example;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 
+
+
+
 /**
  * Database manager class that brings together all components
  * and provides a unified interface for database operations
@@ -11,6 +14,7 @@ public class DatabaseManager {
     private BufferManagerImplementation bufferManager;
     private SystemCatalog systemCatalog;
     private int recordLimit;
+    private String databaseDirectory;
     
     /**
      * Creates a new DatabaseManager with the specified buffer size
@@ -28,14 +32,30 @@ public class DatabaseManager {
     public DatabaseManager(int bufferSize, int recordLimit) {
         System.out.println("Initializing DatabaseManager with buffer size: " + bufferSize +
                           (recordLimit > 0 ? " and record limit: " + recordLimit : ""));
+        // Create database directory structure
+        this.databaseDirectory = "db_files";
+        File dbDir = new File(databaseDirectory);
+        if (!dbDir.exists()) {
+            dbDir.mkdir();
+        }
+        // Create bin directory for indexes
+        File binDir = new File(databaseDirectory + File.separator + "bin");
+        if (!binDir.exists()) {
+            binDir.mkdir();
+        }
+
         this.bufferManager = new BufferManagerImplementation(bufferSize);
         this.systemCatalog = new SystemCatalog();
         this.recordLimit = recordLimit;
+
         
         // Initialize utilities
         Utilities.setBufferManager(bufferManager);
         Utilities.setSystemCatalog(systemCatalog);
         Utilities.setRecordLimit(recordLimit);
+
+
+
     }
     
     /**
@@ -79,7 +99,10 @@ public class DatabaseManager {
         }
         
         // Create an index file ID
-        String fileId = indexName.toLowerCase() + "_index";
+        //String fileId = indexName.toLowerCase() + "_index";
+        // Create an index file ID with path in bin directory
+        String fileId = databaseDirectory + File.separator + "bin" + File.separator +
+                indexName.toLowerCase() + "_index.bin";
         
         // Build the index
         Utilities.buildIndex(tableName, attributeName, indexName, fileId);

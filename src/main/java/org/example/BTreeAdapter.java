@@ -1,5 +1,6 @@
 package org.example;
 
+import java.io.File;
 import java.util.Iterator;
 
 /**
@@ -21,6 +22,9 @@ public class BTreeAdapter<K extends Comparable<K>> implements BTree<K, Rid> {
                          int order,
                          boolean isStringKey) {
         System.out.println("Creating BTreeAdapter for index: " + indexFileId);
+        // Ensure the index file path is absolute
+        File indexFile = new File(indexFileId);
+        String absolutePath = indexFile.getAbsolutePath();
         this.btreeImpl = new BTreeBufferManagerImpl<>(bufferManager, indexFileId, order, isStringKey);
     }
     

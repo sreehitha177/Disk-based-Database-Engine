@@ -160,6 +160,23 @@ public class Utilities {
     public static void buildIndex(String tableName, String attributeName, String indexName, String indexFileId) {
         System.out.println("Building index: " + indexName + " on table: " + tableName + 
                           " for attribute: " + attributeName);
+
+        // Ensure the directory exists
+        File indexFile = new File(indexFileId);
+        File parentDir = indexFile.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs();
+        }
+
+        if (!indexFileId.endsWith(".bin")) {
+            indexFileId = indexFileId + ".bin";
+        }
+
+        // Check if file already exists
+        if (new File(indexFileId).exists()) {
+            System.out.println("Index file already exists: " + indexFileId);
+            return;
+        }
         
         if (bufferManager == null || systemCatalog == null) {
             System.out.println("Buffer manager or system catalog not initialized");
@@ -622,7 +639,7 @@ public class Utilities {
         setRecordLimit(1000); // Limit to 1000 records for testing
         
         // Path to the title.basics.tsv file  ----CHANGE THIS TO YOUR ACTUAL DATASET FILE PATH
-        String filepath = "C:\\Users\\Priya\\Desktop\\UMASS Sem 2\\645\\Lab 1\\645-Lab\\src\\main\\resources\\data\\title.basics.tsv";
+        String filepath = "C:\\Users\\varsh\\OneDrive\\Desktop\\title.basics.tsv";
         
         // Load data into the Movies table
         System.out.println("\n=== LOADING DATA ===");
@@ -654,6 +671,16 @@ public class Utilities {
         
         // Force writing all dirty pages to disk
         bufferManager.force();
+
+        System.out.println("\nCleaning up temporary files...");
+        File tempFile = new File("movies_data.bin");
+        if (tempFile.exists()) {
+            if (tempFile.delete()) {
+                System.out.println("Deleted temporary file: movies_data.bin");
+            } else {
+                System.out.println("Failed to delete temporary file");
+            }
+        }
         
         System.out.println("\nAll tests completed successfully!");
     }
