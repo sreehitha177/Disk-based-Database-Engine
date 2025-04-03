@@ -55,9 +55,26 @@ public class BTreeImplementation<K extends Comparable<K>> {
             BTreeNode childNode = nonLeafNode.getChild(key);
 
             if (childNode.isFull()) {
-                BTreeNonLeafNode<K> newNonLeafNode = ((BTreeNonLeafNode<K>) childNode).split();
-                nonLeafNode.insert(key, newNonLeafNode);
-                insertIntoParent(nonLeafNode, newNonLeafNode);
+                System.out.println(childNode);
+//                BTreeNonLeafNode<K> nonleafchild = ((BTreeNonLeafNode<K>) childNode);
+//                BTreeNonLeafNode<K> newNonLeafNode = nonleafchild.split();
+//                BTreeNonLeafNode<K> newNonLeafNode = ((BTreeNonLeafNode<K>) childNode).split();
+                BTreeNode newNode;
+                if (childNode instanceof BTreeNonLeafNode) {
+                    // If the child is a non-leaf node, split it as a non-leaf
+                    BTreeNonLeafNode<K> nonLeafChild = (BTreeNonLeafNode<K>) childNode;
+                    newNode = nonLeafChild.split();
+                } else if (childNode instanceof BTreeLeafNode) {
+                    // If the child is a leaf node, split it as a leaf
+                    BTreeLeafNode<K> leafChild = (BTreeLeafNode<K>) childNode;
+                    newNode = leafChild.split();
+                } else {
+                    // Should never reach here, but just in case
+                    System.err.println("Unexpected node type: " + childNode.getClass().getName());
+                    return;
+                }
+                nonLeafNode.insert(key, newNode);
+                insertIntoParent(nonLeafNode, newNode);
                 return;
             }
             currentNode = childNode;
@@ -66,8 +83,6 @@ public class BTreeImplementation<K extends Comparable<K>> {
     }
 
 
-    // A generic insert into parent method that can handle both leaf and non-leaf nodes.
-    private void insertIntoParent(BTreeNode<K> oldNode, BTreeNode<K> newNode) {
         // Find the parent of the old node
 //        BTreeNode<K> parentNode = findParentNode(root, oldNode);
 //
@@ -87,7 +102,8 @@ public class BTreeImplementation<K extends Comparable<K>> {
 //                insertIntoParent(nonLeafNode, newParentNode);
 //            }
 //        }
-
+        // A generic insert into parent method that can handle both leaf and non-leaf nodes.
+    private void insertIntoParent(BTreeNode<K> oldNode, BTreeNode<K> newNode) {
         if (root == oldNode) {
             BTreeNonLeafNode<K> newRoot = new BTreeNonLeafNode<>(maxEntries);
 

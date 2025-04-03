@@ -121,7 +121,7 @@ public class BTreeNonLeafNode<K extends Comparable<K>> implements BTreeNode {
     // Split the node when it becomes full
     public BTreeNonLeafNode<K> split() {
         int mid = keys.size() / 2;
-
+        System.out.println( "Entering the split function");
         // Create a new non-leaf node for the split
         BTreeNonLeafNode<K> newNode = new BTreeNonLeafNode<>(maxKeys);
 
