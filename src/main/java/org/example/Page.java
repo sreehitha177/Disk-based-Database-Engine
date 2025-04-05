@@ -3,6 +3,7 @@ package org.example;
 //Page
 public interface Page {
 
+    int PAGE_SIZE = 4096;
     /**
      * Fetches a row from the page by its row ID.
      * @param rowId The ID of the row to retrieve.
