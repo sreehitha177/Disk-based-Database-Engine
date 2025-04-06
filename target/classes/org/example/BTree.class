@@ -1,0 +1,12 @@
+// Source code is decompiled from a .class file using FernFlower decompiler.
+package org.example;
+
+import java.util.Iterator;
+
+public interface BTree<K extends Comparable<K>, V> {
+   void insert(K var1, Rid var2);
+
+   Iterator<Rid> search(K var1);
+
+   Iterator<Rid> rangeSearch(K var1, K var2);
+}
