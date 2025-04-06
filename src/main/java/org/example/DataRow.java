@@ -1,13 +1,16 @@
 package org.example;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 public class DataRow extends Row {
     public static final int SIZE = 39; // 9 (movieId) + 30 (title)
     private final byte[] movieId; // 9 bytes
     private final byte[] title;   // 30 bytes
 
+    // DataRow assumes that the bytes are in a fixed-width encoding.
     public DataRow(byte[] movieId, byte[] title) {
+        // Truncate or pad to ensure fixed length
         this.movieId = utilities_new.truncateOrPadByteArray(movieId, 9);
         this.title = utilities_new.truncateOrPadByteArray(title, 30);
     }

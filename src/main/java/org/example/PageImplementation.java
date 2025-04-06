@@ -4,14 +4,14 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class PageImplementation implements Page {
-    // Use the constant from Page interface
     public static final int PAGE_SIZE = Page.PAGE_SIZE; // 4096 bytes
+    private static final int HEADER_SIZE = 1; // Reserve 1 byte for the page type header
 
     private final int pageId;
     private final byte[] data;
     private int pinCount = 0;
     private boolean isDirty;
-    private int nextFreeOffset;
+    private int nextFreeOffset; // Points to where the next row will be written
 
     public PageImplementation(int pageId, int pageSize) {
         if (pageSize != PAGE_SIZE) {
@@ -20,8 +20,8 @@ public class PageImplementation implements Page {
         this.pageId = pageId;
         this.data = new byte[PAGE_SIZE];
         this.isDirty = false;
-        this.nextFreeOffset = 0;
-        initializeNextFreeOffset();
+        // Start writing rows after the header
+        this.nextFreeOffset = HEADER_SIZE;
     }
 
     public PageImplementation(int pageId, byte[] data) {
@@ -33,72 +33,52 @@ public class PageImplementation implements Page {
         initializeNextFreeOffset();
     }
 
-
-//    @Override
-//    public Row getRow(int rowId) {
-//        int offset = rowId * Row.ROW_SIZE;
-//        if (offset + Row.ROW_SIZE > data.length) {
-//            return null; // Out of bounds
-//        }
-//
-//        ByteBuffer buffer = ByteBuffer.wrap(data);
-//        buffer.position(offset);
-//
-//        byte[] movieIdBytes = new byte[9];
-//        byte[] titleBytes = new byte[30];
-//
-//        buffer.get(movieIdBytes);
-//        buffer.get(titleBytes);
-//
-//        byte[] trimmedMovieId = utilities_new.removeTrailingBytes(movieIdBytes);
-//        byte[] trimmedTitle = utilities_new.removeTrailingBytes(titleBytes);
-//
-//        return new Row(trimmedMovieId, trimmedTitle);
-//    }
-//
-//    @Override
-//    public int insertRow(Row row) {
-//        if (nextFreeOffset + Row.ROW_SIZE > data.length) {
-//            return -1; //  Page full
-//        }
-//        ByteBuffer buffer = ByteBuffer.wrap(data);
-//        buffer.position(nextFreeOffset);
-//
-//        byte[] paddedMovieId = utilities_new.truncateOrPadByteArray(row.movieId, 9);
-//        byte[] paddedTitle = utilities_new.truncateOrPadByteArray(row.title, 30);
-//
-//        buffer.put(paddedMovieId);
-//        buffer.put(paddedTitle);
-//
-//        int insertedIndex = nextFreeOffset / Row.ROW_SIZE;
-//        nextFreeOffset += Row.ROW_SIZE;
-////        markDirty();
-//        return insertedIndex;
-//    }
+    // Initialize nextFreeOffset by scanning from HEADER_SIZE onwards
+    private void initializeNextFreeOffset() {
+        for (int i = HEADER_SIZE; i < data.length; i += Row.ROW_SIZE) {
+            if (data[i] == 0) {
+                nextFreeOffset = i;
+                return;
+            }
+        }
+        nextFreeOffset = data.length; // Page is full
+    }
 
     private boolean isDataPage() {
-        if (data.length == 0) return false; // Empty page can't be determined
+        if (data.length == 0) return false;
         return data[BTreePage.NODE_TYPE_OFFSET] == BTreePage.DATA_PAGE;
     }
 
     @Override
     public Row getRow(int rowId) {
+        // Compute the offset for the row: header + row index * rowSize
+        int rowSize = getRowSize();
+        int offset = HEADER_SIZE + rowId * rowSize;
         if (isDataPage()) {
-            return getDataRow(rowId);
+            return getDataRow(offset);
         } else {
-            return getIndexRow(rowId);
+            return getIndexRow(offset);
         }
     }
 
-    private Row getDataRow(int rowId) {
-        int offset = rowId * DataRow.SIZE;
+    // Determine the row size based on the page type stored in the header
+    private int getRowSize() {
+        byte pageType = data[BTreePage.NODE_TYPE_OFFSET];
+        if (pageType == BTreePage.DATA_PAGE) {
+            return DataRow.SIZE;
+        } else if (pageType == BTreePage.LEAF_NODE) {
+            return LeafRow.SIZE;
+        } else {
+            return NonLeafRow.SIZE;
+        }
+    }
+
+    private Row getDataRow(int offset) {
         if (offset + DataRow.SIZE > data.length) {
             return null;
         }
-
         ByteBuffer buffer = ByteBuffer.wrap(data);
         buffer.position(offset);
-
         byte[] movieId = new byte[9];
         byte[] title = new byte[30];
         buffer.get(movieId);
@@ -106,26 +86,22 @@ public class PageImplementation implements Page {
         return new DataRow(movieId, title);
     }
 
-    private Row getIndexRow(int rowId) {
-        boolean isLeaf = data[BTreePage.NODE_TYPE_OFFSET] == BTreePage.LEAF_NODE;
-        int rowSize = isLeaf ? LeafRow.SIZE : NonLeafRow.SIZE;
-
-        int offset = rowId * rowSize;
-        if (offset + rowSize > data.length) {
-            return null;
-        }
-
-        ByteBuffer buffer = ByteBuffer.wrap(data);
-        buffer.position(offset);
-
-        if (isLeaf) {
+    private Row getIndexRow(int offset) {
+        byte pageType = data[BTreePage.NODE_TYPE_OFFSET];
+        if (pageType == BTreePage.LEAF_NODE) {
+            if (offset + LeafRow.SIZE > data.length) return null;
+            ByteBuffer buffer = ByteBuffer.wrap(data);
+            buffer.position(offset);
             int keyLen = buffer.getInt();
             byte[] key = new byte[keyLen];
             buffer.get(key);
             int pid = buffer.getInt();
             int sid = buffer.getInt();
             return new LeafRow(key, new Rid(pid, sid));
-        } else {
+        } else { // Internal node
+            if (offset + NonLeafRow.SIZE > data.length) return null;
+            ByteBuffer buffer = ByteBuffer.wrap(data);
+            buffer.position(offset);
             int keyLen = buffer.getInt();
             byte[] key = new byte[keyLen];
             buffer.get(key);
@@ -136,66 +112,46 @@ public class PageImplementation implements Page {
 
     @Override
     public int insertRow(Row row) {
-        // Determine row size based on instance type
         int rowSize;
         if (row instanceof DataRow) {
             rowSize = DataRow.SIZE;
-            // Ensure page is marked as data page
-            if (data.length == 0) {
+            // Mark page as data page if not already marked
+            if (data[BTreePage.NODE_TYPE_OFFSET] != BTreePage.DATA_PAGE) {
                 data[BTreePage.NODE_TYPE_OFFSET] = BTreePage.DATA_PAGE;
             }
         } else if (row instanceof LeafRow) {
             rowSize = LeafRow.SIZE;
-            // Ensure page is marked as leaf node
-            if (data.length == 0) {
+            if (data[BTreePage.NODE_TYPE_OFFSET] != BTreePage.LEAF_NODE) {
                 data[BTreePage.NODE_TYPE_OFFSET] = BTreePage.LEAF_NODE;
             }
-        } else { // NodePointerRow
+        } else { // NonLeafRow (internal node)
             rowSize = NonLeafRow.SIZE;
-            // Ensure page is marked as internal node
-            if (data.length == 0) {
+            if (data[BTreePage.NODE_TYPE_OFFSET] != BTreePage.INTERNAL_NODE) {
                 data[BTreePage.NODE_TYPE_OFFSET] = BTreePage.INTERNAL_NODE;
             }
         }
-
         if (nextFreeOffset + rowSize > data.length) {
             return -1; // Page full
         }
-
         ByteBuffer buffer = ByteBuffer.wrap(data);
         buffer.position(nextFreeOffset);
         buffer.put(row.getBytes());
-
-        int insertedIndex = nextFreeOffset / rowSize;
+        // Calculate the row index based on the HEADER_SIZE offset
+        int insertedIndex = (nextFreeOffset - HEADER_SIZE) / rowSize;
         nextFreeOffset += rowSize;
         markDirty();
         return insertedIndex;
     }
 
-
-//    private int getRowSize() {
-//        // Determine based on page type
-//        if (data.length == 0) return DataRow.SIZE; // Default
-//
-//        if (/* is data page */) {
-//            return DataRow.SIZE;
-//        } else if (data[BTreePage.NODE_TYPE_OFFSET] == BTreePage.LEAF_NODE) {
-//            return LeafRow.SIZE;
-//        } else {
-//            return NonLeafRow.SIZE;
-//        }
-//    }
-
     @Override
     public boolean isFull() {
-        return (nextFreeOffset + Row.ROW_SIZE) > PAGE_SIZE;
+        return (nextFreeOffset + getRowSize()) > PAGE_SIZE;
     }
 
     @Override
     public void markDirty() {
-        this.isDirty = true;  // ✅ Directly mark the page as dirty
+        this.isDirty = true;
     }
-
 
     @Override
     public int getPid() {
@@ -204,7 +160,7 @@ public class PageImplementation implements Page {
 
     @Override
     public byte[] getData() {
-        return Arrays.copyOf(data, data.length); // Return defensive copy
+        return Arrays.copyOf(data, data.length);
     }
 
     @Override
@@ -214,7 +170,7 @@ public class PageImplementation implements Page {
         }
         System.arraycopy(data, 0, this.data, 0, PAGE_SIZE);
         this.isDirty = true;
-        initializeNextFreeOffset(); // Recalculate free space
+        initializeNextFreeOffset();
     }
 
     public void pin() {
@@ -232,16 +188,6 @@ public class PageImplementation implements Page {
     }
 
     public boolean isDirty() {
-        return isDirty;  // ✅ Expose dirty status
-    }
-
-    private void initializeNextFreeOffset() {
-        for (int i = 0; i < data.length; i += Row.ROW_SIZE) {
-            if (data[i] == 0) { // ✅ Empty slot found
-                nextFreeOffset = i;
-                return;
-            }
-        }
-        nextFreeOffset = data.length; // ✅ Page full
+        return isDirty;
     }
 }
