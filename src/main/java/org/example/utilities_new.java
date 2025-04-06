@@ -180,6 +180,7 @@ public class utilities_new {
         return results;
     }
 
+    // implements pin and update using LRU
     public static void pinAndUpdateLRU(PageImplementation page, LinkedHashMap<String, PageImplementation> lruCache, String key) {
         page.pin();
         lruCache.remove(key);
@@ -211,7 +212,7 @@ public class utilities_new {
     public static void main(String[] args) {
         bufferManager = new BufferManagerImplementation(2048);
         setBufferManager(bufferManager);
-        String filepath = "C:\\Users\\varsh\\OneDrive\\Desktop\\title.basics.tsv";
+        String filepath = "C:/Users/lavan/OneDrive/Desktop/645 Database/title.basics.tsv/title.basics.tsv";
         System.out.println("Loading dataset from: " + filepath);
         loadDataset(filepath);
 
