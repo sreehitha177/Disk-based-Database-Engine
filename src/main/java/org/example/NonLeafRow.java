@@ -3,7 +3,7 @@ package org.example;
 import java.nio.ByteBuffer;
 
 public class NonLeafRow extends Row {
-    public static final int SIZE = 12; // Adjust based on your needs
+    public static final int SIZE = 12; 
     private final byte[] key;
     private final int childPageId;
 
