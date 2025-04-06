@@ -210,7 +210,7 @@ public class utilities_new {
     public static void main(String[] args) {
         bufferManager = new BufferManagerImplementation(50);
         setBufferManager(bufferManager);
-        String filepath = "C:\\Users\\Priya\\Desktop\\UMASS Sem 2\\645\\Lab 1\\645_Project-master\\src\\main\\resources\\data\\title.basics.tsv";
+        String filepath = "src\\main\\resources\\data\\title.basics.tsv";
         System.out.println("Loading dataset from: " + filepath);
         loadDataset(filepath);
         System.out.println("\nSearch for Movie ID 101:");
