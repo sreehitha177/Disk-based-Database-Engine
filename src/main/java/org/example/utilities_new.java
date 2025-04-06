@@ -39,7 +39,7 @@ public class utilities_new {
             int currentPageId = currentPage.getPid();
             int totalRows = 0;
             int processedRows = 0;
-            final int MAX_ROWS = 10000;
+//            final int MAX_ROWS = 10000;
             
             // Variables to track the 100th row information
             int hundredthMovieId = -1;
@@ -47,7 +47,7 @@ public class utilities_new {
             int hundredthPageId = -1;
             int hundredthSlotId = -1;
 
-            while (processedRows < MAX_ROWS) {
+            while (true) {
                 String line = br.readLine();
                 if (line == null) break;
                 processedRows++;
@@ -209,9 +209,9 @@ public class utilities_new {
     }
 
     public static void main(String[] args) {
-        bufferManager = new BufferManagerImplementation(50);
+        bufferManager = new BufferManagerImplementation(2048);
         setBufferManager(bufferManager);
-        String filepath = "C:\\Users\\Priya\\Desktop\\UMASS Sem 2\\645\\Lab 1\\645_Project-master\\src\\main\\resources\\data\\title.basics.tsv";
+        String filepath = "/Users/sreehithanarayana/Downloads/title.basics.tsv";
         System.out.println("Loading dataset from: " + filepath);
         loadDataset(filepath);
 
