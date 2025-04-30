@@ -1,5 +1,6 @@
 package org.example;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,6 +49,13 @@ public class ScanOperator implements Operator {
                 row = ((PageImplementation) currentPage).getWorkedOnRow(currentSlot);
             } else if (filePath.contains("people.data")) {
                 row = ((PageImplementation) currentPage).getPeopleRow(currentSlot);
+                if (row instanceof PeopleRow) {
+                    PeopleRow pr = (PeopleRow) row;
+                    System.out.println("Scanned personId: '" + new String(pr.getPersonId(), StandardCharsets.ISO_8859_1).trim() +
+                            "', name: '" + new String(pr.getName(), StandardCharsets.ISO_8859_1).trim() + "'");
+                } else {
+                    System.out.println("Warning: Non-PeopleRow returned from people.data");
+                }
             } else if (filePath.contains("workedon_temp.data")) {
                 row = ((PageImplementation) currentPage).getTempRow(currentSlot);
             }else {

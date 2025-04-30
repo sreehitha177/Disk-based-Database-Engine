@@ -144,6 +144,9 @@ public class PageImplementation implements Page {
         byte[] name = new byte[105];
         buffer.get(personId);
         buffer.get(name);
+        System.out.println("Reading PeopleRow @ offset = " + offset);
+        System.out.printf("Bytes: %02X %02X %02X %02X ...\n", data[offset], data[offset+1], data[offset+2], data[offset+3]);
+
         return new PeopleRow(personId, name);
     }
 

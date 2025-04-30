@@ -254,6 +254,8 @@ public class utilities_new {
                     Row row = new PeopleRow(
                             personIdStr.getBytes(StandardCharsets.ISO_8859_1),
                             nameStr.getBytes(StandardCharsets.ISO_8859_1));
+                    System.out.println("Writing PeopleRow: personId=" + personIdStr + ", name=" + nameStr);
+
                     int slotId;
                     if (currentPage.isFull()) {
                         bufferManager.unpinPage("people.data", currentPageId);
