@@ -5,12 +5,24 @@ import java.nio.ByteBuffer;
 public class JoinedRow extends Row {
     private final byte[] outerData;
     private final byte[] innerData;
+    private final Row outer;
+    private final Row inner;
     private final int size;
 
     public JoinedRow(Row outer, Row inner) {
         this.outerData = outer.getBytes();
         this.innerData = inner.getBytes();
+        this.outer = outer;
+        this.inner = inner;
         this.size = outerData.length + innerData.length;
+    }
+
+    public Row getOuter() {
+        return outer;
+    }
+
+    public Row getInner() {
+        return inner;
     }
 
     @Override

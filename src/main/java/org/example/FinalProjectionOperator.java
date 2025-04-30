@@ -38,15 +38,22 @@ public class FinalProjectionOperator implements Operator{
             // If innerData is TempRow, it would be 9 + 10
             // If innerData is PeopleRow, it would be 10 + 105
             byte[] nameBytes;
-            if (innerData.length >= 115) {
-                // inner is PeopleRow (personId(10) + name(105))
-                int nameOffset = 10;
-                nameBytes = new byte[105];
-                System.arraycopy(innerData, nameOffset, nameBytes, 0, 105);
+//            if (innerData.length >= 115) {
+//                // inner is PeopleRow (personId(10) + name(105))
+//                int nameOffset = 10;
+//                nameBytes = new byte[105];
+//                System.arraycopy(innerData, nameOffset, nameBytes, 0, 105);
+//            } else {
+//                // This case shouldn't happen for final join (workedon ⨝ people)
+//                nameBytes = new byte[0];
+//            }
+            Row inner = jr.getInner();
+            if (inner instanceof PeopleRow) {
+                nameBytes = ((PeopleRow) inner).getName();
             } else {
-                // This case shouldn't happen for final join (workedon ⨝ people)
                 nameBytes = new byte[0];
             }
+
             System.out.println("Final Output: " + new String(titleBytes).trim() + " -- " + new String(nameBytes).trim());
             return new TitleNameRow(titleBytes, nameBytes);
         }
