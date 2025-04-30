@@ -34,7 +34,27 @@ public class ScanOperator implements Operator {
                 return null; // No more pages to scan
             }
 
-            Row row = currentPage.getRow(currentSlot);
+//            Row row = currentPage.getRow(currentSlot);
+            Row row=null;
+            if (filePath.contains("movies.data")) {
+                row = ((PageImplementation) currentPage).getDataRowBySlot(currentSlot);
+                if (row instanceof DataRow) {
+                    DataRow dr = (DataRow) row;
+                    System.out.println("Scanned movieId: '" + new String(dr.getMovieId()).trim() +
+                            "', title: '" + new String(dr.getTitle()).trim() + "'");
+                }
+
+            } else if (filePath.contains("workedon.data")) {
+                row = ((PageImplementation) currentPage).getWorkedOnRow(currentSlot);
+            } else if (filePath.contains("people.data")) {
+                row = ((PageImplementation) currentPage).getPeopleRow(currentSlot);
+            } else if (filePath.contains("workedon_temp.data")) {
+                row = ((PageImplementation) currentPage).getTempRow(currentSlot);
+            }else {
+                throw new RuntimeException("Unknown filePath: " + filePath);
+            }
+
+
 
             if (row != null) {
                 currentSlot++;

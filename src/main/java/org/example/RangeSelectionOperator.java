@@ -27,6 +27,8 @@ public class RangeSelectionOperator implements Operator {
             if (row instanceof DataRow) {
                 DataRow dataRow = (DataRow) row;
                 String title = new String(dataRow.getTitle()).trim();
+                System.out.println("Title candidate: " + title);
+
                 if (title.compareTo(startRange) >= 0 && title.compareTo(endRange) <= 0) {
                     return dataRow;
                 }

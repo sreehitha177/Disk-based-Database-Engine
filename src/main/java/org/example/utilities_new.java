@@ -73,49 +73,45 @@ public class utilities_new {
                     // Convert the Strings to bytes using ISO-8859-1 for fixed-length storage
                     Row row = new DataRow(movieIdStr.getBytes(StandardCharsets.ISO_8859_1), 
                                           title.getBytes(StandardCharsets.ISO_8859_1));
+
+                    System.out.println("Raw input: movieId=" + movieIdStr + ", title=" + title);
+                    System.out.println("Bytes: movieId=" + Arrays.toString(movieIdStr.getBytes(StandardCharsets.ISO_8859_1)));
+                    System.out.println("       title=" + Arrays.toString(title.getBytes(StandardCharsets.ISO_8859_1)));
+
                     int slotId;
                     if (currentPage.isFull()) {
                         bufferManager.unpinPage("movies.data", currentPageId);
                         currentPage = bufferManager.createPage("movies.data");
                         currentPageId = currentPage.getPid();
-                        slotId = currentPage.insertRow(row);
-                        bufferManager.markDirty("movies.data", currentPageId);
-                    } else {
-                        slotId = currentPage.insertRow(row);
-                        bufferManager.markDirty("movies.data", currentPageId);
+//                        System.out.println("Loading row: movieId=" + movieIdStr + ", title='" + title + "'");
+//                        slotId = currentPage.insertRow(row);
+//                        bufferManager.markDirty("movies.data", currentPageId);
+//                    } else {
+//                        System.out.println("Loading row: movieId=" + movieIdStr + ", title='" + title + "'");
+//                        slotId = currentPage.insertRow(row);
+//                        bufferManager.markDirty("movies.data", currentPageId);
                     }
+                    System.out.println("Loading row: movieId=" + movieIdStr + ", title='" + title + "'");
+                    slotId = currentPage.insertRow(row);
+                    System.out.println("Inserted row size: " + row.getSize() + ", slot=" + slotId + ", page=" + currentPageId);
+
+                    bufferManager.markDirty("movies.data", currentPageId);
+
+
+
                     totalRows++;
                     System.out.println("Inserted Row with ID: " + slotId + " on Page ID: " + currentPageId);
-                    /* if (totalRows == 100) {
-                        hundredthMovieId = movieId;
-                        hundredthTitle = title;
-                        hundredthPageId = currentPageId;
-                        hundredthSlotId = slotId;
-                    } */
-//                    if (totalRows % 100 == 0) {
-//                        System.out.println("Inserted Row with ID: " + slotId + " on Page ID: " + currentPageId +
-//                                           " - MovieID: " + movieId + ", Title: " + title);
-//                    }
                     Rid rid = new Rid(currentPageId, slotId);
-                    titleIndex.insert(title, rid);
-                    movieIdIndex.insert(movieId, rid);
+//                    titleIndex.insert(title, rid);
+//                    movieIdIndex.insert(movieId, rid);
                 } catch (NumberFormatException e) {
                     System.out.println("Skipping invalid movie ID: " + movieIdStr);
                 }
             }
             bufferManager.unpinPage("movies.data", currentPageId);
-//            System.out.println("Total rows processed: " + totalRows);
-//            if (hundredthMovieId != -1) {
-//                System.out.println("\n**** 100th row information ****");
-//                System.out.println("MovieID: " + hundredthMovieId);
-//                System.out.println("Title: " + hundredthTitle);
-//                System.out.println("PageID: " + hundredthPageId);
-//                System.out.println("SlotID: " + hundredthSlotId);
-//                System.out.println("*****************************");
-//            }
             bufferManager.force("movies.data");
-            bufferManager.force("movies.title.idx");
-            bufferManager.force("movies.movieid.idx");
+//            bufferManager.force("movies.title.idx");
+//            bufferManager.force("movies.movieid.idx");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -156,6 +152,7 @@ public class utilities_new {
                         currentPageId = currentPage.getPid();
                     }
                     slotId = currentPage.insertRow(row);
+                    System.out.println("Inserted Row with ID: " + slotId + " on Page ID: " + currentPageId);
                     bufferManager.markDirty("workedon.data", currentPageId);
                 } catch (Exception e) {
                     System.out.println("Skipping invalid row: " + line);
@@ -201,6 +198,7 @@ public class utilities_new {
                         currentPageId = currentPage.getPid();
                     }
                     slotId = currentPage.insertRow(row);
+                    System.out.println("Inserted Row with ID: " + slotId + " on Page ID: " + currentPageId);
                     bufferManager.markDirty("people.data", currentPageId);
                 } catch (Exception e) {
                     System.out.println("Skipping invalid row: " + line);

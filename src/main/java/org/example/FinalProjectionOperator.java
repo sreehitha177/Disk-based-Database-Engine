@@ -47,7 +47,7 @@ public class FinalProjectionOperator implements Operator{
                 // This case shouldn't happen for final join (workedon ⨝ people)
                 nameBytes = new byte[0];
             }
-
+            System.out.println("Final Output: " + new String(titleBytes).trim() + " -- " + new String(nameBytes).trim());
             return new TitleNameRow(titleBytes, nameBytes);
         }
 

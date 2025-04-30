@@ -50,16 +50,27 @@ public class PageImplementation implements Page {
     }
 
     @Override
+//    public Row getRow(int rowId) {
+//        // Compute the offset for the row: header + row index * rowSize
+//        int rowSize = getRowSize();
+//        int offset = HEADER_SIZE + rowId * rowSize;
+//        if (isDataPage()) {
+//            return getDataRow(offset);
+//        } else {
+//            return getIndexRow(offset);
+//        }
+//    }
     public Row getRow(int rowId) {
-        // Compute the offset for the row: header + row index * rowSize
-        int rowSize = getRowSize();
-        int offset = HEADER_SIZE + rowId * rowSize;
-        if (isDataPage()) {
-            return getDataRow(offset);
-        } else {
+        byte pageType = data[BTreePage.NODE_TYPE_OFFSET];
+        if (pageType == BTreePage.LEAF_NODE || pageType == BTreePage.INTERNAL_NODE) {
+            int rowSize = getRowSize();
+            int offset = HEADER_SIZE + rowId * rowSize;
             return getIndexRow(offset);
+        } else {
+            throw new UnsupportedOperationException("getRow() called on Data Page. Use specific getXXXRow() from ScanOperator.");
         }
     }
+
 
     // Determine the row size based on the page type stored in the header
     private int getRowSize() {
@@ -73,18 +84,81 @@ public class PageImplementation implements Page {
         }
     }
 
-    private Row getDataRow(int offset) {
+    public Row getDataRow(int offset) {
         if (offset + DataRow.SIZE > data.length) {
             return null;
         }
+        System.out.println("getDataRow @ offset " + offset);
+
         ByteBuffer buffer = ByteBuffer.wrap(data);
         buffer.position(offset);
+
+        for (int i = 0; i < 39; i++) {
+            System.out.printf("%02X ", buffer.get(i));
+        }
+        System.out.println();
+
         byte[] movieId = new byte[9];
         byte[] title = new byte[30];
         buffer.get(movieId);
         buffer.get(title);
         return new DataRow(movieId, title);
     }
+
+    public Row getDataRowBySlot(int slotId) {
+        int offset = HEADER_SIZE + slotId * DataRow.SIZE;
+        if (offset + DataRow.SIZE > nextFreeOffset) {
+            return null;
+        }
+        return getDataRow(offset);
+    }
+
+
+    public Row getWorkedOnRow(int slotId) {
+        int offset = HEADER_SIZE + slotId * WorkedOnRow.SIZE;
+        if (offset + WorkedOnRow.SIZE > data.length) {
+            return null;
+        }
+        ByteBuffer buffer = ByteBuffer.wrap(data);
+        buffer.position(offset);
+        byte[] movieId = new byte[9];
+        byte[] personId = new byte[10];
+        byte[] category = new byte[20];
+        buffer.get(movieId);
+        buffer.get(personId);
+        buffer.get(category);
+        return new WorkedOnRow(movieId, personId, category);
+    }
+
+    public Row getPeopleRow(int slotId) {
+        int offset = HEADER_SIZE + slotId * PeopleRow.SIZE;
+        if (offset + PeopleRow.SIZE > data.length) {
+            return null;
+        }
+        ByteBuffer buffer = ByteBuffer.wrap(data);
+        buffer.position(offset);
+        byte[] personId = new byte[10];
+        byte[] name = new byte[105];
+        buffer.get(personId);
+        buffer.get(name);
+        return new PeopleRow(personId, name);
+    }
+
+    public Row getTempRow(int slotId) {
+        int offset = HEADER_SIZE + slotId * TempRow.SIZE;
+        if (offset + TempRow.SIZE > data.length) {
+            return null;
+        }
+        ByteBuffer buffer = ByteBuffer.wrap(data);
+        buffer.position(offset);
+        byte[] movieId = new byte[9];
+        byte[] personId = new byte[10];
+        buffer.get(movieId);
+        buffer.get(personId);
+        return new TempRow(movieId, personId);
+    }
+
+
 
     private Row getIndexRow(int offset) {
         byte pageType = data[BTreePage.NODE_TYPE_OFFSET];

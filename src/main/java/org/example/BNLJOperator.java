@@ -51,6 +51,8 @@ public class BNLJOperator implements Operator {
             String key = extractJoinKey(currentInnerRow);
             List<Row> matchingRows = hashTable.getOrDefault(key, new ArrayList<>());
             matchingOuterRows = matchingRows.iterator();
+            System.out.println("Inner join key: " + key + ", Matching rows: " + matchingRows.size());
+
         }
     }
 
@@ -73,6 +75,7 @@ public class BNLJOperator implements Operator {
             outerBlock.add(row);
             String key = extractJoinKey(row);
             hashTable.computeIfAbsent(key, k -> new ArrayList<>()).add(row);
+            System.out.println("BNLJ loading outer block, current page count: " + pageCount);
         }
     }
 

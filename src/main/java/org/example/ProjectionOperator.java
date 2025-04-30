@@ -68,6 +68,8 @@ public class ProjectionOperator implements Operator{
                         currentPageId = currentPage.getPid();
                         tempPageCount++;
                     }
+                    System.out.println("Materializing: " + new String(movieId).trim() + "," + new String(personId).trim());
+
                     currentPage.insertRow(projectedRow);
                     bufferManager.markDirty(tempFilePath, currentPageId);
                 }

@@ -2,6 +2,7 @@ package org.example;
 
 public class run_query {
     public static void main(String[] args) {
+
         if (args.length != 3) {
             System.out.println("Usage: java run_query <start_range> <end_range> <buffer_size>");
             return;
@@ -13,7 +14,7 @@ public class run_query {
 
         BufferManager bufferManager = new BufferManagerImplementation(bufferSize);
         utilities_new.setBufferManager(bufferManager);
-
+//        System.out.println("HELLO");
         // Define number of pages (assuming you know these)
         int totalMoviePages = 500;      // You should set real values
         int totalWorkedOnPages = 500;
@@ -39,13 +40,17 @@ public class run_query {
             RangeSelectionOperator moviesInRange = new RangeSelectionOperator(moviesScan, startRange, endRange);
 
             // 6. BNL Join: Movies ⨝ WorkedOnTemp
-            BNLJOperator moviesWorkedOnJoin = new BNLJOperator(moviesInRange, projection, bufferManager, bufferSize);
+//            BNLJOperator moviesWorkedOnJoin = new BNLJOperator(moviesInRange, projection, bufferManager, bufferSize);
+//
+//            // 7. BNL Join: (Movies⨝WorkedOnTemp) ⨝ People
+//            BNLJOperator finalJoin = new BNLJOperator(moviesWorkedOnJoin, peopleScan, bufferManager, bufferSize);
 
-            // 7. BNL Join: (Movies⨝WorkedOnTemp) ⨝ People
-            BNLJOperator finalJoin = new BNLJOperator(moviesWorkedOnJoin, peopleScan, bufferManager, bufferSize);
 
+
+            BNLJOperator join1 = new BNLJOperator(moviesInRange, projection, bufferManager, bufferSize);
+            BNLJOperator join2 = new BNLJOperator(join1, peopleScan, bufferManager, bufferSize);
             // 8. Final Projection: output (title, name)
-            FinalProjectionOperator finalProjection = new FinalProjectionOperator(finalJoin);
+            FinalProjectionOperator finalProjection = new FinalProjectionOperator(join2);
 
             // 9. Execute the query
             finalProjection.open();
