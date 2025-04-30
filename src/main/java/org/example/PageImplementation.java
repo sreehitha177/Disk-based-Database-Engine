@@ -6,6 +6,9 @@ import java.util.Arrays;
 public class PageImplementation implements Page {
     public static final int PAGE_SIZE = Page.PAGE_SIZE; // 4096 bytes
     private static final int HEADER_SIZE = 1; // Reserve 1 byte for the page type header
+    public static final byte DATA_PAGE = 2;
+    public static final byte WORKEDON_PAGE = 3;
+    public static final byte PEOPLE_PAGE = 4;
 
     private final int pageId;
     private final byte[] data;
@@ -46,7 +49,7 @@ public class PageImplementation implements Page {
 
     private boolean isDataPage() {
         if (data.length == 0) return false;
-        return data[BTreePage.NODE_TYPE_OFFSET] == BTreePage.DATA_PAGE;
+        return data[BTreePage.NODE_TYPE_OFFSET] == DATA_PAGE;
     }
 
     @Override
@@ -75,7 +78,7 @@ public class PageImplementation implements Page {
     // Determine the row size based on the page type stored in the header
     private int getRowSize() {
         byte pageType = data[BTreePage.NODE_TYPE_OFFSET];
-        if (pageType == BTreePage.DATA_PAGE) {
+        if (pageType == DATA_PAGE) {
             return DataRow.SIZE;
         } else if (pageType == BTreePage.LEAF_NODE) {
             return LeafRow.SIZE;
@@ -190,8 +193,20 @@ public class PageImplementation implements Page {
         if (row instanceof DataRow) {
             rowSize = DataRow.SIZE;
             // Mark page as data page if not already marked
-            if (data[BTreePage.NODE_TYPE_OFFSET] != BTreePage.DATA_PAGE) {
-                data[BTreePage.NODE_TYPE_OFFSET] = BTreePage.DATA_PAGE;
+            if (data[BTreePage.NODE_TYPE_OFFSET] != DATA_PAGE) {
+                data[BTreePage.NODE_TYPE_OFFSET] = DATA_PAGE;
+            }
+        } else if (row instanceof WorkedOnRow) {
+            rowSize = WorkedOnRow.SIZE;
+            // Mark page as data page if not already marked
+            if (data[BTreePage.NODE_TYPE_OFFSET] != WORKEDON_PAGE) {
+                data[BTreePage.NODE_TYPE_OFFSET] = WORKEDON_PAGE;
+            }
+        } else if (row instanceof PeopleRow) {
+            rowSize = WorkedOnRow.SIZE;
+            // Mark page as data page if not already marked
+            if (data[BTreePage.NODE_TYPE_OFFSET] != PEOPLE_PAGE) {
+                data[BTreePage.NODE_TYPE_OFFSET] = PEOPLE_PAGE;
             }
         } else if (row instanceof LeafRow) {
             rowSize = LeafRow.SIZE;

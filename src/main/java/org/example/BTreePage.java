@@ -11,7 +11,7 @@ public class BTreePage {
     public static final int NODE_TYPE_OFFSET = 0;
     public static final int KEY_COUNT_OFFSET = 1;
     public static final int DATA_START_OFFSET = 5; // 1 byte type + 4 bytes key count
-    public static final byte DATA_PAGE = 2;
+//    public static final byte DATA_PAGE = 2;
 
     public static byte[] serializeLeafNode(List<Comparable> keys, List<Rid> rids) {
         ByteBuffer buffer = ByteBuffer.allocate(Page.PAGE_SIZE);

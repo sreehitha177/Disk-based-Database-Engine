@@ -118,6 +118,59 @@ public class utilities_new {
     }
 
 
+//    public static void loadWorkedOnDataset(String filepath) {
+//        File file = new File(filepath);
+//        if (!file.exists()) {
+//            System.out.println("File not found: " + file.getAbsolutePath());
+//            return;
+//        }
+//        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(filepath), StandardCharsets.UTF_8))) {
+//            br.readLine(); // Skip header
+//            Page currentPage = bufferManager.createPage("workedon.data");
+//            int currentPageId = currentPage.getPid();
+//
+//            while (true) {
+//                String line = br.readLine();
+//                if (line == null) break;
+//                String[] data = line.split("\t");
+//                if (data.length < 4 || data[0].isEmpty() || data[2].isEmpty() || data[3].isEmpty()) {
+//                    System.out.println("Skipping malformed line: " + line);
+//                    continue;
+//                }
+//                String movieIdStr = data[0];
+//                String personIdStr = data[2];
+//                String categoryStr = data[3];
+//                System.out.println("Parsed: " + movieIdStr + ", " + personIdStr + ", " + categoryStr);
+//
+//                try {
+//                    Row row = new WorkedOnRow(
+//                            movieIdStr.getBytes(StandardCharsets.ISO_8859_1),
+//                            personIdStr.getBytes(StandardCharsets.ISO_8859_1),
+//                            categoryStr.getBytes(StandardCharsets.ISO_8859_1));
+//
+//                    int slotId;
+//                    if (currentPage.isFull()) {
+//                        bufferManager.unpinPage("workedon.data", currentPageId);
+//                        currentPage = bufferManager.createPage("workedon.data");
+//                        currentPageId = currentPage.getPid();
+//                    }
+//                    slotId = currentPage.insertRow(row);
+//                    System.out.println("Inserted Row with ID: " + slotId + " on Page ID: " + currentPageId);
+//                    bufferManager.markDirty("workedon.data", currentPageId);
+//                } catch (Exception e) {
+//                    System.out.println("Skipping invalid row: " + line);
+//                }
+//            }
+//            bufferManager.unpinPage("workedon.data", currentPageId);
+//            bufferManager.force("workedon.data");
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
+
+
+
     public static void loadWorkedOnDataset(String filepath) {
         File file = new File(filepath);
         if (!file.exists()) {
@@ -132,38 +185,48 @@ public class utilities_new {
             while (true) {
                 String line = br.readLine();
                 if (line == null) break;
+
                 String[] data = line.split("\t");
-                if (data.length < 4) {
-                    System.out.println("Skipping malformed line: " + line);
+
+                if (data.length < 4 || data[0].isEmpty() || data[2].isEmpty() || data[3].isEmpty()) {
+                    System.out.println("Skipping malformed WorkedOn line: " + line);
                     continue;
                 }
-                String movieIdStr = data[0];
-                String personIdStr = data[2];
-                String categoryStr = data[3];
+
+                String movieIdStr = data[0];   // tconst
+                String personIdStr = data[2];  // nconst
+                String categoryStr = data[3];  // category
+
+                System.out.println("Parsed WorkedOn: " + movieIdStr + ", " + personIdStr + ", " + categoryStr);
+
                 try {
                     Row row = new WorkedOnRow(
                             movieIdStr.getBytes(StandardCharsets.ISO_8859_1),
                             personIdStr.getBytes(StandardCharsets.ISO_8859_1),
-                            categoryStr.getBytes(StandardCharsets.ISO_8859_1));
+                            categoryStr.getBytes(StandardCharsets.ISO_8859_1)
+                    );
+
                     int slotId;
                     if (currentPage.isFull()) {
                         bufferManager.unpinPage("workedon.data", currentPageId);
                         currentPage = bufferManager.createPage("workedon.data");
                         currentPageId = currentPage.getPid();
                     }
+
                     slotId = currentPage.insertRow(row);
-                    System.out.println("Inserted Row with ID: " + slotId + " on Page ID: " + currentPageId);
                     bufferManager.markDirty("workedon.data", currentPageId);
                 } catch (Exception e) {
-                    System.out.println("Skipping invalid row: " + line);
+                    System.out.println("Error inserting WorkedOn row: " + e.getMessage());
                 }
             }
+
             bufferManager.unpinPage("workedon.data", currentPageId);
             bufferManager.force("workedon.data");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
 
 
     public static void loadPeopleDataset(String filepath) {
