@@ -54,7 +54,7 @@ public class FinalProjectionOperator implements Operator{
                 nameBytes = new byte[0];
             }
 
-            System.out.println("Final Output: " + new String(titleBytes).trim() + " -- " + new String(nameBytes).trim());
+//            System.out.println("Final Output: " + new String(titleBytes).trim() + " -- " + new String(nameBytes).trim());
             return new TitleNameRow(titleBytes, nameBytes);
         }
 

@@ -3,7 +3,7 @@ package org.example;
 import java.nio.ByteBuffer;
 
 public class WorkedOnRow extends Row {
-    public static final int SIZE = 43; // 9 + 10 + 20 + (4+4+4 for key lengths)
+    public static final int SIZE = 39; // 9 + 10 + 20
     private final byte[] movieId;   // 9 bytes
     private final byte[] personId;  // 10 bytes
     private final byte[] category;  // 20 bytes

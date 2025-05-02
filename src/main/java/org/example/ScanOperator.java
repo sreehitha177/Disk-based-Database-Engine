@@ -35,29 +35,41 @@ public class ScanOperator implements Operator {
                 return null; // No more pages to scan
             }
 
-//            Row row = currentPage.getRow(currentSlot);
             Row row=null;
             if (filePath.contains("movies.data")) {
                 row = ((PageImplementation) currentPage).getDataRowBySlot(currentSlot);
-                if (row instanceof DataRow) {
-                    DataRow dr = (DataRow) row;
-                    System.out.println("Scanned movieId: '" + new String(dr.getMovieId()).trim() +
-                            "', title: '" + new String(dr.getTitle()).trim() + "'");
-                }
+//                System.out.println("Scanning Page " + currentPageId + ", Slot " + currentSlot);
+//                if (row instanceof DataRow) {
+//                    DataRow dr = (DataRow) row;
+//                    System.out.println("Scanned movieId: '" + new String(dr.getMovieId()).trim() +
+//                            "', title: '" + new String(dr.getTitle()).trim() + "'");
+//                }
 
             } else if (filePath.contains("workedon.data")) {
                 row = ((PageImplementation) currentPage).getWorkedOnRow(currentSlot);
+//                System.out.println("Scanning Page " + currentPageId + ", Slot " + currentSlot);
+//                if (row instanceof WorkedOnRow) {
+//                    WorkedOnRow wr = (WorkedOnRow) row;
+//                    System.out.println("Scanned movieId: '" + new String(wr.getMovieId()).trim() +
+//                            "', personId: '" + new String(wr.getPersonId()).trim() + "', category: '" + new String(wr.getCategory()).trim() + "'");
+//                }
             } else if (filePath.contains("people.data")) {
                 row = ((PageImplementation) currentPage).getPeopleRow(currentSlot);
-                if (row instanceof PeopleRow) {
-                    PeopleRow pr = (PeopleRow) row;
-                    System.out.println("Scanned personId: '" + new String(pr.getPersonId(), StandardCharsets.ISO_8859_1).trim() +
-                            "', name: '" + new String(pr.getName(), StandardCharsets.ISO_8859_1).trim() + "'");
-                } else {
-                    System.out.println("Warning: Non-PeopleRow returned from people.data");
-                }
+//                if (row instanceof PeopleRow) {
+//                    PeopleRow pr = (PeopleRow) row;
+//                    System.out.println("Scanned personId: '" + new String(pr.getPersonId(), StandardCharsets.ISO_8859_1).trim() +
+//                            "', name: '" + new String(pr.getName(), StandardCharsets.ISO_8859_1).trim() + "'");
+//                }
+//                else {
+//                    System.out.println("Warning: Non-PeopleRow returned from people.data");
+//                }
             } else if (filePath.contains("workedon_temp.data")) {
                 row = ((PageImplementation) currentPage).getTempRow(currentSlot);
+//                if (row instanceof TempRow) {
+//                    TempRow tr = (TempRow) row;
+//                    System.out.println("Scanned movieId: '" + new String(tr.getMovieId()).trim() +
+//                            "', personId: '" + new String(tr.getPersonId()).trim() + "'");
+//                }
             }else {
                 throw new RuntimeException("Unknown filePath: " + filePath);
             }
@@ -68,7 +80,6 @@ public class ScanOperator implements Operator {
                 currentSlot++;
                 return row;
             } else {
-                // Move to next page
                 bufferManager.unpinPage(filePath, currentPageId);
                 currentPageId++;
                 if (currentPageId >= totalPages) {

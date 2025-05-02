@@ -9,6 +9,7 @@ public class PageImplementation implements Page {
     public static final byte DATA_PAGE = 2;
     public static final byte WORKEDON_PAGE = 3;
     public static final byte PEOPLE_PAGE = 4;
+    public static final byte TEMP_PAGE = 5;
 
     private final int pageId;
     private final byte[] data;
@@ -33,19 +34,20 @@ public class PageImplementation implements Page {
         }
         this.pageId = pageId;
         this.data = Arrays.copyOf(data, PAGE_SIZE);
-        initializeNextFreeOffset();
+        this.nextFreeOffset=findNextFreeOffset();
+//        initializeNextFreeOffset();
     }
 
     // Initialize nextFreeOffset by scanning from HEADER_SIZE onwards
-    private void initializeNextFreeOffset() {
-        for (int i = HEADER_SIZE; i < data.length; i += Row.ROW_SIZE) {
-            if (data[i] == 0) {
-                nextFreeOffset = i;
-                return;
-            }
-        }
-        nextFreeOffset = data.length; // Page is full
-    }
+//    private void initializeNextFreeOffset() {
+//        for (int i = HEADER_SIZE; i < data.length; i += Row.ROW_SIZE) {
+//            if (data[i] == 0) {
+//                nextFreeOffset = i;
+//                return;
+//            }
+//        }
+//        nextFreeOffset = data.length; // Page is full
+//    }
 
     private boolean isDataPage() {
         if (data.length == 0) return false;
@@ -80,7 +82,13 @@ public class PageImplementation implements Page {
         byte pageType = data[BTreePage.NODE_TYPE_OFFSET];
         if (pageType == DATA_PAGE) {
             return DataRow.SIZE;
-        } else if (pageType == BTreePage.LEAF_NODE) {
+        } else if (pageType == WORKEDON_PAGE) {
+            return WorkedOnRow.SIZE;
+        } else if (pageType == PEOPLE_PAGE) {
+            return PeopleRow.SIZE;
+        } else if (pageType == TEMP_PAGE) {
+            return TempRow.SIZE;
+        }else if (pageType == BTreePage.LEAF_NODE) {
             return LeafRow.SIZE;
         } else {
             return NonLeafRow.SIZE;
@@ -91,15 +99,15 @@ public class PageImplementation implements Page {
         if (offset + DataRow.SIZE > data.length) {
             return null;
         }
-        System.out.println("getDataRow @ offset " + offset);
+//        System.out.println("getDataRow @ offset " + offset);
 
         ByteBuffer buffer = ByteBuffer.wrap(data);
         buffer.position(offset);
 
-        for (int i = 0; i < 39; i++) {
-            System.out.printf("%02X ", buffer.get(i));
-        }
-        System.out.println();
+//        for (int i = 0; i < 39; i++) {
+//            System.out.printf("%02X ", buffer.get(i));
+//        }
+//        System.out.println();
 
         byte[] movieId = new byte[9];
         byte[] title = new byte[30];
@@ -119,6 +127,9 @@ public class PageImplementation implements Page {
 
     public Row getWorkedOnRow(int slotId) {
         int offset = HEADER_SIZE + slotId * WorkedOnRow.SIZE;
+        if (offset + WorkedOnRow.SIZE > nextFreeOffset) {
+            return null;
+        }
         if (offset + WorkedOnRow.SIZE > data.length) {
             return null;
         }
@@ -135,6 +146,9 @@ public class PageImplementation implements Page {
 
     public Row getPeopleRow(int slotId) {
         int offset = HEADER_SIZE + slotId * PeopleRow.SIZE;
+        if (offset + PeopleRow.SIZE > nextFreeOffset) {
+            return null;
+        }
         if (offset + PeopleRow.SIZE > data.length) {
             return null;
         }
@@ -144,14 +158,14 @@ public class PageImplementation implements Page {
         byte[] name = new byte[105];
         buffer.get(personId);
         buffer.get(name);
-        System.out.println("Reading PeopleRow @ offset = " + offset);
-        System.out.printf("Bytes: %02X %02X %02X %02X ...\n", data[offset], data[offset+1], data[offset+2], data[offset+3]);
-
         return new PeopleRow(personId, name);
     }
 
     public Row getTempRow(int slotId) {
         int offset = HEADER_SIZE + slotId * TempRow.SIZE;
+        if (offset + TempRow.SIZE > nextFreeOffset) {
+            return null;
+        }
         if (offset + TempRow.SIZE > data.length) {
             return null;
         }
@@ -206,12 +220,18 @@ public class PageImplementation implements Page {
                 data[BTreePage.NODE_TYPE_OFFSET] = WORKEDON_PAGE;
             }
         } else if (row instanceof PeopleRow) {
-            rowSize = WorkedOnRow.SIZE;
+            rowSize = PeopleRow.SIZE;
             // Mark page as data page if not already marked
             if (data[BTreePage.NODE_TYPE_OFFSET] != PEOPLE_PAGE) {
                 data[BTreePage.NODE_TYPE_OFFSET] = PEOPLE_PAGE;
             }
-        } else if (row instanceof LeafRow) {
+        } else if (row instanceof TempRow) {
+            rowSize = TempRow.SIZE;
+            // Mark page as data page if not already marked
+            if (data[BTreePage.NODE_TYPE_OFFSET] != TEMP_PAGE) {
+                data[BTreePage.NODE_TYPE_OFFSET] = TEMP_PAGE;
+            }
+        }else if (row instanceof LeafRow) {
             rowSize = LeafRow.SIZE;
             if (data[BTreePage.NODE_TYPE_OFFSET] != BTreePage.LEAF_NODE) {
                 data[BTreePage.NODE_TYPE_OFFSET] = BTreePage.LEAF_NODE;
@@ -225,14 +245,65 @@ public class PageImplementation implements Page {
         if (nextFreeOffset + rowSize > data.length) {
             return -1; // Page full
         }
-        ByteBuffer buffer = ByteBuffer.wrap(data);
-        buffer.position(nextFreeOffset);
-        buffer.put(row.getBytes());
-        // Calculate the row index based on the HEADER_SIZE offset
-        int insertedIndex = (nextFreeOffset - HEADER_SIZE) / rowSize;
-        nextFreeOffset += rowSize;
-        markDirty();
-        return insertedIndex;
+
+        int insertPos = HEADER_SIZE + (getKeyCount() * rowSize);
+        if (insertPos + rowSize > data.length) return -1;
+
+        System.arraycopy(row.getBytes(), 0, data, insertPos, rowSize);
+        nextFreeOffset = insertPos + rowSize;
+//        setKeyCount(getKeyCount() + 1);
+
+
+        return (insertPos - HEADER_SIZE) / rowSize;
+//        nextFreeOffset += rowSize;
+//        markDirty();
+//        return insertedIndex;
+    }
+
+
+    private int findNextFreeOffset() {
+        int rowSize = getRowSize();
+        for (int offset = HEADER_SIZE; offset + rowSize <= data.length; offset += rowSize) {
+            boolean empty = true;
+            for (int i = 0; i < rowSize; i++) {
+                if (data[offset + i] != 0) {
+                    empty = false;
+                    break;
+                }
+            }
+            if (empty) {
+                return offset;
+            }
+        }
+        return data.length;
+    }
+
+    protected int getKeyCount() {
+        if (data == null || data.length == 0) return 0;
+
+        int count = 0;
+        int headerSize = HEADER_SIZE;
+        int rowSize = getRowSize();
+
+        // Start checking after header
+        for (int offset = headerSize; offset + rowSize <= data.length; offset += rowSize) {
+            // Check if the slot is empty (all zeros)
+            boolean isEmpty = true;
+            for (int i = 0; i < rowSize; i++) {
+                if (data[offset + i] != 0) {
+                    isEmpty = false;
+                    break;
+                }
+            }
+
+            if (isEmpty) {
+                break; // Reached an empty slot
+            }
+
+            count++;
+        }
+
+        return count;
     }
 
     @Override
@@ -255,15 +326,17 @@ public class PageImplementation implements Page {
         return Arrays.copyOf(data, data.length);
     }
 
-    @Override
-    public void setData(byte[] data) {
-        if (data.length != PAGE_SIZE) {
-            throw new IllegalArgumentException("Data length must be " + PAGE_SIZE + " bytes");
-        }
-        System.arraycopy(data, 0, this.data, 0, PAGE_SIZE);
-        this.isDirty = true;
-        initializeNextFreeOffset();
-    }
+//    @Override
+//    public void setData(byte[] data) {
+//        if (data.length != PAGE_SIZE) {
+//            throw new IllegalArgumentException("Data length must be " + PAGE_SIZE + " bytes");
+//        }
+//        System.arraycopy(data, 0, this.data, 0, PAGE_SIZE);
+//        this.isDirty = true;
+//        initializeNextFreeOffset();
+//    }
+    @Override public void setData(byte[] data) { System.arraycopy(data, 0, this.data, 0, Math.min(data.length, this.data.length)); }
+
 
     public void pin() {
         pinCount++;

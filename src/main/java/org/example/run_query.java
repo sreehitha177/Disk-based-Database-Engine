@@ -3,6 +3,7 @@ package org.example;
 public class run_query {
     public static void main(String[] args) {
 
+        int count=0;
         if (args.length != 3) {
             System.out.println("Usage: java run_query <start_range> <end_range> <buffer_size>");
             return;
@@ -14,9 +15,8 @@ public class run_query {
 
         BufferManager bufferManager = new BufferManagerImplementation(bufferSize);
         utilities_new.setBufferManager(bufferManager);
-//        System.out.println("HELLO");
-        // Define number of pages (assuming you know these)
-        int totalMoviePages = 500;      // You should set real values
+
+        int totalMoviePages = 500;
         int totalWorkedOnPages = 500;
         int totalPeoplePages = 500;
 
@@ -55,16 +55,18 @@ public class run_query {
             // 9. Execute the query
             finalProjection.open();
             Row result;
+
             while ((result = finalProjection.next()) != null) {
                 if (result instanceof TitleNameRow) {
                     TitleNameRow tnr = (TitleNameRow) result;
                     String title = new String(tnr.getTitle()).trim();
                     String name = new String(tnr.getName()).trim();
                     System.out.println(title + "," + name); // Output in CSV format
+                    count++;
                 }
             }
             finalProjection.close();
-
+            System.out.println("Total number of rows: "+ count);
         } catch (Exception e) {
             e.printStackTrace();
         }

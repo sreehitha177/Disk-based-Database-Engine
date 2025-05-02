@@ -24,7 +24,7 @@ public class SelectionOperator implements Operator{
             if (row instanceof WorkedOnRow) {
                 WorkedOnRow workedOnRow = (WorkedOnRow) row;
                 String category = new String(workedOnRow.getCategory()).trim();
-                System.out.println("Category candidate: " + category);
+//                System.out.println("Category candidate: " + category);
                 if (category.equals(selectionValue)) {
                     return workedOnRow;
                 }

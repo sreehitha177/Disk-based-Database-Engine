@@ -8,8 +8,8 @@ public class TempRow extends Row {
     private final byte[] personId;
 
     public TempRow(byte[] movieId, byte[] personId) {
-        this.movieId = utilities_new.truncateOrPadByteArray(movieId, 9);
-        this.personId = utilities_new.truncateOrPadByteArray(personId, 10);
+        this.movieId = utilities_new.truncateOrPadByteArray(movieId.clone(), 9);
+        this.personId = utilities_new.truncateOrPadByteArray(personId.clone(), 10);
     }
 
     @Override

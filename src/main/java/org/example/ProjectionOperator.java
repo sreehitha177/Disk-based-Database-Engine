@@ -45,6 +45,7 @@ public class ProjectionOperator implements Operator{
     private void materialize() {
         try {
             Page currentPage = bufferManager.createPage(tempFilePath);
+            currentPage.getData()[0] = PageImplementation.TEMP_PAGE;
             int currentPageId = currentPage.getPid();
             tempPageCount = 1;
 
@@ -54,22 +55,22 @@ public class ProjectionOperator implements Operator{
 
                 if (row instanceof WorkedOnRow) {
                     WorkedOnRow workedOnRow = (WorkedOnRow) row;
-
+//                    System.out.println("Row is instance of WorkedOnRow with movieId: " + new String(workedOnRow.getMovieId()).trim());
                     // Create a projected row containing only movieId and personId
                     byte[] movieId = workedOnRow.getMovieId();
                     byte[] personId = workedOnRow.getPersonId();
 
 //                    LeafRow projectedRow = new LeafRow(movieId, new Rid(0, 0)); // Dummy Rid, not important for join matching
                     TempRow projectedRow = new TempRow(movieId, personId);
-
+//                    System.out.println("TempRow created with movieId: " +new String(projectedRow.getMovieId()).trim());
                     if (currentPage.isFull()) {
                         bufferManager.unpinPage(tempFilePath, currentPageId);
                         currentPage = bufferManager.createPage(tempFilePath);
+                        currentPage.getData()[0] = PageImplementation.TEMP_PAGE;
                         currentPageId = currentPage.getPid();
                         tempPageCount++;
                     }
-                    System.out.println("Materializing: " + new String(movieId).trim() + "," + new String(personId).trim());
-
+                    System.out.println("Materializing: " + new String(projectedRow.getMovieId()).trim() + "," + new String(projectedRow.getPersonId()).trim());
                     currentPage.insertRow(projectedRow);
                     bufferManager.markDirty(tempFilePath, currentPageId);
                 }

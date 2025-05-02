@@ -51,7 +51,7 @@ public class BNLJOperator implements Operator {
             String key = extractJoinKey(currentInnerRow);
             List<Row> matchingRows = hashTable.getOrDefault(key, new ArrayList<>());
             matchingOuterRows = matchingRows.iterator();
-            System.out.println("Inner join key: " + key + ", Matching rows: " + matchingRows.size());
+//            System.out.println("Inner join key: " + key + ", Matching rows: " + matchingRows.size());
 
         }
     }
@@ -75,22 +75,46 @@ public class BNLJOperator implements Operator {
             outerBlock.add(row);
             String key = extractJoinKey(row);
             hashTable.computeIfAbsent(key, k -> new ArrayList<>()).add(row);
-            System.out.println("BNLJ loading outer block, current page count: " + pageCount);
         }
     }
+
+//    private String extractJoinKey(Row row) {
+//        String key = "";
+//        if (row instanceof DataRow) {
+//            key = new String(((DataRow) row).getMovieId()).trim();
+//        } else if (row instanceof TempRow) {
+//            key = new String(((TempRow) row).getMovieId()).trim();
+//        } else if (row instanceof PeopleRow) {
+//            key = new String(((PeopleRow) row).getPersonId()).trim();
+//        }
+//        System.out.println("Extracted join key: '" + key + "' from " + row.getClass().getSimpleName());
+//        return key;
+//    }
+
 
     private String extractJoinKey(Row row) {
         if (row instanceof DataRow) {
             return new String(((DataRow) row).getMovieId()).trim();
         } else if (row instanceof TempRow) {
-            return new String(((TempRow) row).getMovieId()).trim();
+            return new String(((TempRow) row).getMovieId()).trim();  // used in join1
         } else if (row instanceof PeopleRow) {
-            return new String(((PeopleRow) row).getPersonId()).trim();
+            return new String(((PeopleRow) row).getPersonId()).trim();  // used in join2 right side
+        } else if (row instanceof JoinedRow) {
+            Row inner = ((JoinedRow) row).getInner();
+            // This is the TempRow (from workedon_temp) → extract **personId** here
+            if (inner instanceof TempRow) {
+                return new String(((TempRow) inner).getPersonId()).trim();  // for join2
+            } else {
+                return extractJoinKey(inner);
+            }
         }
         return "";
     }
+
 
     private Row joinRows(Row outer, Row inner) {
         return new JoinedRow(outer, inner);
     }
 }
+
+
