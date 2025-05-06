@@ -1,5 +1,12 @@
 package org.example;
 
+import org.example.BufferManagement.BufferManager;
+import org.example.BufferManagement.BufferManagerImplementation;
+import org.example.BTree.BTree;
+import org.example.BufferManagement.Page;
+import org.example.BufferManagement.PageImplementation;
+import org.example.Rows.*;
+
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -26,7 +33,70 @@ public class utilities_new {
 //    }
 
     // Load dataset, build indexes, and limit to 10,000 rows
-    public static void loadDataset(String filepath) {
+//    public static void loadDataset(String filepath) {
+//        File file = new File(filepath);
+//        if (!file.exists()) {
+//            System.out.println("File not found: " + file.getAbsolutePath());
+//            return;
+//        }
+//
+//        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(filepath), StandardCharsets.UTF_8))) {
+//            br.readLine();
+//            Page currentPage = bufferManager.createPage("movies.data");
+//            currentPage.getData()[0] = PageImplementation.DATA_PAGE;
+//            int currentPageId = currentPage.getPid();
+//
+//            while (true) {
+//                String line = br.readLine();
+//                if (line == null) break;
+//
+//                String[] data = line.split("\t");
+//
+//                if (data.length < 3) {
+//                    System.out.println("Skipping malformed line: " + line);
+//                    continue;
+//                }
+//                String movieIdStr = data[0];
+//                String title = data[2];
+//                if (title.length() > 30) {
+//                    title = title.substring(0, 30);
+//                }
+//                try {
+//                    String numericPart = movieIdStr.replace("tt", "");
+//                    int movieId = Integer.parseInt(numericPart);
+//                    if (movieIdStr.getBytes(StandardCharsets.ISO_8859_1).length > 9) {
+//                        System.out.println("Skipping row with oversized movieId: " + movieIdStr);
+//                        continue;
+//                    }
+//
+//                    DataRow row = new DataRow(movieIdStr.getBytes(StandardCharsets.ISO_8859_1),
+//                                          title.getBytes(StandardCharsets.ISO_8859_1));
+//
+//                    int slotId;
+//                    if (currentPage.isFull()) {
+//                        bufferManager.unpinPage("movies.data", currentPageId);
+//                        currentPage = bufferManager.createPage("movies.data");
+//                        currentPage.getData()[0] = PageImplementation.DATA_PAGE;
+//                        currentPageId = currentPage.getPid();
+//                    }
+//
+//                    slotId = currentPage.insertRow(row);
+//                    System.out.println("Inserted - movieId: "+movieIdStr+", title: "+title);
+//                    bufferManager.markDirty("movies.data", currentPageId);
+////                    Rid rid = new Rid(currentPageId, slotId);
+//                } catch (NumberFormatException e) {
+//                    System.out.println("Skipping invalid movie ID: " + movieIdStr);
+//                }
+//            }
+//            bufferManager.unpinPage("movies.data", currentPageId);
+//            br.close();
+//            bufferManager.force("movies.data");
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
+    public static void  loadDataset(String filepath){
         File file = new File(filepath);
         if (!file.exists()) {
             System.out.println("File not found: " + file.getAbsolutePath());
@@ -63,7 +133,7 @@ public class utilities_new {
                     }
 
                     DataRow row = new DataRow(movieIdStr.getBytes(StandardCharsets.ISO_8859_1),
-                                          title.getBytes(StandardCharsets.ISO_8859_1));
+                            title.getBytes(StandardCharsets.ISO_8859_1));
 
                     int slotId;
                     if (currentPage.isFull()) {
@@ -88,8 +158,6 @@ public class utilities_new {
             e.printStackTrace();
         }
     }
-
-
     public static void loadWorkedOnDataset(String filepath) {
         File file = new File(filepath);
         if (!file.exists()) {
