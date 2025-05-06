@@ -32,70 +32,7 @@ public class utilities_new {
 //        movieIdIndex = new BTreeImplementation<>(10, bufferManager, "movies.movieid.idx");
 //    }
 
-    // Load dataset, build indexes, and limit to 10,000 rows
-//    public static void loadDataset(String filepath) {
-//        File file = new File(filepath);
-//        if (!file.exists()) {
-//            System.out.println("File not found: " + file.getAbsolutePath());
-//            return;
-//        }
-//
-//        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(filepath), StandardCharsets.UTF_8))) {
-//            br.readLine();
-//            Page currentPage = bufferManager.createPage("movies.data");
-//            currentPage.getData()[0] = PageImplementation.DATA_PAGE;
-//            int currentPageId = currentPage.getPid();
-//
-//            while (true) {
-//                String line = br.readLine();
-//                if (line == null) break;
-//
-//                String[] data = line.split("\t");
-//
-//                if (data.length < 3) {
-//                    System.out.println("Skipping malformed line: " + line);
-//                    continue;
-//                }
-//                String movieIdStr = data[0];
-//                String title = data[2];
-//                if (title.length() > 30) {
-//                    title = title.substring(0, 30);
-//                }
-//                try {
-//                    String numericPart = movieIdStr.replace("tt", "");
-//                    int movieId = Integer.parseInt(numericPart);
-//                    if (movieIdStr.getBytes(StandardCharsets.UTF_8).length > 9) {
-//                        System.out.println("Skipping row with oversized movieId: " + movieIdStr);
-//                        continue;
-//                    }
-//
-//                    DataRow row = new DataRow(movieIdStr.getBytes(StandardCharsets.UTF_8),
-//                                          title.getBytes(StandardCharsets.UTF_8));
-//
-//                    int slotId;
-//                    if (currentPage.isFull()) {
-//                        bufferManager.unpinPage("movies.data", currentPageId);
-//                        currentPage = bufferManager.createPage("movies.data");
-//                        currentPage.getData()[0] = PageImplementation.DATA_PAGE;
-//                        currentPageId = currentPage.getPid();
-//                    }
-//
-//                    slotId = currentPage.insertRow(row);
-//                    System.out.println("Inserted - movieId: "+movieIdStr+", title: "+title);
-//                    bufferManager.markDirty("movies.data", currentPageId);
-////                    Rid rid = new Rid(currentPageId, slotId);
-//                } catch (NumberFormatException e) {
-//                    System.out.println("Skipping invalid movie ID: " + movieIdStr);
-//                }
-//            }
-//            bufferManager.unpinPage("movies.data", currentPageId);
-//            br.close();
-//            bufferManager.force("movies.data");
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
+   
     public static void  loadDataset(String filepath){
         File file = new File(filepath);
         if (!file.exists()) {
