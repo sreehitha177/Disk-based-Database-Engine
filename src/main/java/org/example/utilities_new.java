@@ -146,7 +146,6 @@ public class utilities_new {
                     slotId = currentPage.insertRow(row);
                     System.out.println("Inserted - movieId: "+movieIdStr+", title: "+title);
                     bufferManager.markDirty("movies.data", currentPageId);
-//                    Rid rid = new Rid(currentPageId, slotId);
                 } catch (NumberFormatException e) {
                     System.out.println("Skipping invalid movie ID: " + movieIdStr);
                 }
@@ -192,11 +191,7 @@ public class utilities_new {
 //                System.out.println("Parsed WorkedOn: " + movieIdStr + ", " + personIdStr + ", " + categoryStr);
 
                 try {
-//                    WorkedOnRow row = new WorkedOnRow(
-//                            movieIdStr.getBytes(StandardCharsets.UTF_8),
-//                            personIdStr.getBytes(StandardCharsets.UTF_8),
-//                            categoryStr.getBytes(StandardCharsets.UTF_8)
-//                    );
+
                     WorkedOnRow row = new WorkedOnRow(movieIdStr.getBytes(), personIdStr.getBytes(), categoryStr.getBytes());
 
 

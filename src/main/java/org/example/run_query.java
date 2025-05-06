@@ -13,68 +13,53 @@ public class run_query {
     public static void main(String[] args) {
 
         int count=0;
-//        if (args.length != 3) {
-//            System.out.println("Usage: java run_query <start_range> <end_range> <buffer_size>");
-//            return;
-//        }
+        if (args.length != 3) {
+            System.out.println("Usage: java run_query <start_range> <end_range> <buffer_size>");
+            return;
+        }
 
-        String startRange = "A";//args[0];
-        String endRange = "Z";//args[1];
-        int bufferSize = 100;//Integer.parseInt(args[2]);
+        String startRange = args[0];
+        String endRange = args[1];
+        int bufferSize = Integer.parseInt(args[2]);
 
         BufferManager bufferManager = new BufferManagerImplementation(bufferSize);
         utilities_new.setBufferManager(bufferManager);
 
 
-
-
         try {
-            // 1. Setup scan for Movies
+            //Scanning Movies table
             ScanOperator moviesScan = new ScanOperator(bufferManager, "movies.data");
 
-            // 2. Setup scan for WorkedOn
+            //Scanning workedon table
             ScanOperator workedOnScan = new ScanOperator(bufferManager, "workedon.data");
 
-            // 3. SelectionOperator: filter category = "director"
+            //Selecting rows with category = "director"
             SelectionOperator selection = new SelectionOperator(workedOnScan, "director");
 
-            // 4. ProjectionOperator: project movieId and personId and materialize
+            //Prrojecting movieId and personId and materialize
             ProjectionOperator projection = new ProjectionOperator(selection, bufferManager);
 
-            // 5. Setup scan for People
+            //Scanning people table
             ScanOperator peopleScan = new ScanOperator(bufferManager, "people.data");
 
-            //Add Range Selection on top of movies scan
+            //Range selection for movie titles
             RangeSelectionOperator moviesInRange = new RangeSelectionOperator(moviesScan, startRange, endRange);
-            System.out.println("Count after range selection:"+ moviesInRange.countRows());
-//             6. BNL Join: Movies ⨝ WorkedOnTemp
+//            System.out.println("Count after range selection:"+ moviesInRange.countRows());
+
+            //BNL Join: Movies ⨝ WorkedOnTemp
             BNLJOperator join1 = new BNLJOperator(moviesInRange, projection, bufferManager, bufferSize);
 //            System.out.println("Count after first join:"+ join1.countRows());
 
-            // 7. BNL Join: (Movies⨝WorkedOnTemp) ⨝ People
+            //BNL Join: (Movies⨝WorkedOnTemp) ⨝ People
             BNLJOperator join2 = new BNLJOperator(join1, peopleScan, bufferManager, bufferSize);
 //            System.out.println("Count after second join:"+ join2.countRows());
 
 
-            // 8. Final Projection: output (title, name)
+            //Final Projection for the output (title, name)
             FinalProjectionOperator finalProjection = new FinalProjectionOperator(join2);
             System.out.println("Count after final projection:"+finalProjection.countRows());
 
-            // 9. Execute the query
-//            finalProjection.open();
-//            Row result;
-//
-//            while ((result = finalProjection.next()) != null) {
-//                if (result instanceof TitleNameRow) {
-//                    TitleNameRow tnr = (TitleNameRow) result;
-//                    String title = new String(tnr.getTitle()).trim();
-//                    String name = new String(tnr.getName()).trim();
-//                    System.out.println(title + "," + name); // Output in CSV format
-//                    count++;
-//                }
-//            }
-//            finalProjection.close();
-//            System.out.println("Total number of rows: "+ count);
+
         } catch (Exception e) {
             e.printStackTrace();
         }

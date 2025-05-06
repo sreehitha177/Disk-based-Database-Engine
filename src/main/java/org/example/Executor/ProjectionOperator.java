@@ -10,12 +10,12 @@ import org.example.Rows.WorkedOnRow;
 import java.io.File;
 
 public class ProjectionOperator implements Operator {
-    private final SelectionOperator child;  // Child is the selection on WorkedOn
+    private final SelectionOperator child;
     private final BufferManager bufferManager;
-    private final String tempFilePath = "workedon_temp.data"; // You can hardcode the temp file name
+    private final String tempFilePath = "workedon_temp.data";
     private boolean materialized;
-    private ScanOperator tempScan; // To scan after materialization
-    private int tempPageCount;     // Number of pages in temp file
+    private ScanOperator tempScan;
+    private int tempPageCount;
 
     public ProjectionOperator(SelectionOperator child, BufferManager bufferManager) {
         this.child = child;
@@ -40,13 +40,15 @@ public class ProjectionOperator implements Operator {
         if (tempScan != null) {
             tempScan.close();
         }
-        // Optionally delete the temp file to clean up
+
         File tempFile = new File(tempFilePath);
         if (tempFile.exists()) {
             tempFile.delete();
         }
     }
 
+
+    //Materializing the temporary table
     private void materialize() {
         try {
             Page currentPage = bufferManager.createPage(tempFilePath);
@@ -61,6 +63,7 @@ public class ProjectionOperator implements Operator {
                 if (row instanceof WorkedOnRow) {
                     WorkedOnRow workedOnRow = (WorkedOnRow) row;
 //                    System.out.println("Row is instance of WorkedOnRow with movieId: " + new String(workedOnRow.getMovieId()).trim());
+
                     // Create a projected row containing only movieId and personId
                     byte[] movieId = workedOnRow.getMovieId();
                     byte[] personId = workedOnRow.getPersonId();
@@ -68,6 +71,7 @@ public class ProjectionOperator implements Operator {
 //                    LeafRow projectedRow = new LeafRow(movieId, new Rid(0, 0)); // Dummy Rid, not important for join matching
                     TempRow projectedRow = new TempRow(movieId, personId);
 //                    System.out.println("TempRow created with movieId: " +new String(projectedRow.getMovieId()).trim());
+
                     if (currentPage.isFull()) {
                         bufferManager.unpinPage(tempFilePath, currentPageId);
                         currentPage = bufferManager.createPage(tempFilePath);
@@ -84,13 +88,15 @@ public class ProjectionOperator implements Operator {
             bufferManager.unpinPage(tempFilePath, currentPageId);
             bufferManager.force(tempFilePath);
 
-            // Now setup tempScan to read from the materialized temp file
+            //Reading tempScan from the materialized temp file
             tempScan = new ScanOperator(bufferManager, tempFilePath);
             materialized = true;
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+    //To count total number of rows
     public int countRows() {
         open();
         int count = 0;

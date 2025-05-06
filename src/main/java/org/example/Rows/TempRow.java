@@ -6,8 +6,8 @@ import java.nio.ByteBuffer;
 
 public class TempRow extends Row {
     public static final int SIZE = 9 + 10; // movieId(9 bytes) + personId(10 bytes)
-    private final byte[] movieId;
-    private final byte[] personId;
+    private final byte[] movieId; //9 bytes
+    private final byte[] personId;  //10 bytes
 
     public TempRow(byte[] movieId, byte[] personId) {
         this.movieId = utilities_new.truncateOrPadByteArray(movieId.clone(), 9);

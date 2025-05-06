@@ -7,18 +7,18 @@ import java.io.*;
 
 public class pre_process {
     public static void main(String[] args) {
-//        if (args.length != 3) {
-//            System.out.println("Usage: java pre_process <movies_file> <workedon_file> <people_file>");
-//            return;
-//        }
+        if (args.length != 3) {
+            System.out.println("Usage: java pre_process <movies_file> <workedon_file> <people_file>");
+            return;
+        }
 
-//        String moviesFile = args[0];
-//        String workedOnFile = args[1];
-//        String peopleFile = args[2];
+        String moviesFile = args[0];
+        String workedOnFile = args[1];
+        String peopleFile = args[2];
 
-        String moviesFile = "/Users/sreehithanarayana/Desktop/645_Project/test100000.movies.tsv";
-        String workedOnFile = "/Users/sreehithanarayana/Desktop/645_Project/test100000.workedon.tsv";
-        String peopleFile = "/Users/sreehithanarayana/Desktop/645_Project/test100000.people.tsv";
+//        String moviesFile = "/Users/sreehithanarayana/Desktop/645_Project/test100000.movies.tsv";
+//        String workedOnFile = "/Users/sreehithanarayana/Desktop/645_Project/test100000.workedon.tsv";
+//        String peopleFile = "/Users/sreehithanarayana/Desktop/645_Project/test100000.people.tsv";
 
 
         moviesFile = cleanTSVFile(moviesFile, "cleaned_movies.tsv");
@@ -30,6 +30,7 @@ public class pre_process {
         BufferManager bufferManager = new BufferManagerImplementation(100); // buffer size can be passed if you want
         utilities_new.setBufferManager(bufferManager);
 
+        //Loading datasets
         System.out.println("Loading Movies table...");
         utilities_new.loadDataset(moviesFile);
 
@@ -42,6 +43,8 @@ public class pre_process {
         System.out.println("Preprocessing completed successfully.");
     }
 
+
+    //Cleaning dataset
     private static String  cleanTSVFile(String inputPath, String outputPath) {
         System.out.println("Cleaning file: " + inputPath);
         try (

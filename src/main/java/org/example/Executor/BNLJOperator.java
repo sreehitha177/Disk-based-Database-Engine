@@ -9,11 +9,12 @@ import java.util.*;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 
+//Block Nested Loop Join (BNLJ) Operator implementation.
 public class BNLJOperator implements Operator {
-    private final Operator leftChild;   // NOT just ScanOperator
-    private final Operator rightChild;  // NOT just ScanOperator
+    private final Operator leftChild;
+    private final Operator rightChild;
     private final BufferManager bufferManager;
-    private final int blockPageLimit;
+    private final int blockPageLimit;    //Max number of pages we can use for outer block (excluding right buffer and temp pages)
     private List<Row> outerBlock;
     private Map<String, List<Row>> hashTable;
     private Row currentInnerRow;
@@ -24,7 +25,7 @@ public class BNLJOperator implements Operator {
         this.leftChild = leftChild;
         this.rightChild = rightChild;
         this.bufferManager = bufferManager;
-        this.blockPageLimit = (bufferSize - 4) / 2;
+        this.blockPageLimit = (bufferSize - 4) / 2;   //Reserving 4 pages (usually for input/output/temporary)
         this.outerBlock = new ArrayList<>();
         this.hashTable = new HashMap<>();
         this.endOfLeft = false;
@@ -37,6 +38,7 @@ public class BNLJOperator implements Operator {
         loadNextBlock();
     }
 
+    //Returns next joined row from the join result
     @Override
     public Row next() {
         while (true) {
@@ -55,6 +57,7 @@ public class BNLJOperator implements Operator {
                 if (currentInnerRow == null) return null;
             }
 
+            //Finding matching outer rows for this inner row using the join key
             String key = extractJoinKey(currentInnerRow);
             List<Row> matchingRows = hashTable.getOrDefault(key, new ArrayList<>());
             matchingOuterRows = matchingRows.iterator();
@@ -63,6 +66,7 @@ public class BNLJOperator implements Operator {
         }
     }
 
+    //To count total number of joined rows
     public int countRows() {
         // Save current state
         leftChild.close();
@@ -85,6 +89,7 @@ public class BNLJOperator implements Operator {
         rightChild.close();
     }
 
+    //Loads the next block of rows from the outer input
     private void loadNextBlock() {
         outerBlock.clear();
         hashTable.clear();
@@ -98,24 +103,20 @@ public class BNLJOperator implements Operator {
             outerBlock.add(row);
             String key = extractJoinKey(row);
             hashTable.computeIfAbsent(key, k -> new ArrayList<>()).add(row);
-//            pageCount++;
         }
     }
 
-
+    //Extracts the join key from a row based on its type
     private String extractJoinKey(Row row) {
         if (row instanceof DataRow) {
-//            System.out.println("Entering datarow");
             return new String(((DataRow) row).getMovieId()).trim();
         } else if (row instanceof TempRow) {
-//            System.out.println("Entering TempRow");
             return new String(((TempRow) row).getMovieId()).trim();  // used in join1
         } else if (row instanceof PeopleRow) {
             return new String(((PeopleRow) row).getPersonId()).trim();  // used in join2 right side
         } else if (row instanceof JoinedRow) {
             Row inner = ((JoinedRow) row).getInner();
             if (inner instanceof TempRow) {
-//                System.out.println("Entering TempRow");
 
                 return new String(((TempRow) inner).getPersonId()).trim();  // for join2
             } else {

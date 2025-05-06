@@ -3,8 +3,8 @@ package org.example.Rows;
 import java.nio.ByteBuffer;
 
 public class TitleNameRow extends Row {
-    private final byte[] title;
-    private final byte[] name;
+    private final byte[] title; //30 bytes
+    private final byte[] name; //105 bytes
 
     public TitleNameRow(byte[] title, byte[] name) {
         this.title = title;

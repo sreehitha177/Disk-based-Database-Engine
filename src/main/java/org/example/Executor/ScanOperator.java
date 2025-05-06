@@ -5,6 +5,7 @@ import org.example.BufferManagement.Page;
 import org.example.BufferManagement.PageImplementation;
 import org.example.Rows.Row;
 
+//File scan for the table
 public class ScanOperator implements Operator {
     private final BufferManager bufferManager;
     private final String filePath;
@@ -12,12 +13,11 @@ public class ScanOperator implements Operator {
     private Page currentPage;
     private int currentSlot;
     private boolean isOpen;
-//    private final int totalPages;  // total number of pages
+
 
     public ScanOperator(BufferManager bufferManager, String filePath) {
         this.bufferManager = bufferManager;
         this.filePath = filePath;
-//        this.totalPages = totalPages;
         this.isOpen = false;
     }
 
@@ -28,6 +28,7 @@ public class ScanOperator implements Operator {
         this.currentPage = bufferManager.getPage(filePath, currentPageId);
     }
 
+    //To count the number of rows
     public int countRows() {
         open();
         int count = 0;
@@ -39,8 +40,6 @@ public class ScanOperator implements Operator {
     }
 
 
-
-
     public Row next() {
         if (!isOpen) return null;
         while (true) {
@@ -49,6 +48,8 @@ public class ScanOperator implements Operator {
             }
 
             Row row=null;
+
+            //Getting rows based on their row type
             if (filePath.contains("movies.data")) {
                 row = ((PageImplementation) currentPage).getDataRowBySlot(currentSlot);
             } else if (filePath.contains("workedon.data")) {
@@ -73,20 +74,6 @@ public class ScanOperator implements Operator {
         }
     }
 
-//    public Row next() {
-//
-//        while (currentPage != null) {
-//            Row row = currentPage.getRow(currentSlot++);
-//            if (row != null) return row;
-//
-//            // Move to next page
-//            bufferManager.unpinPage(filePath, currentPageId);
-//            currentPageId++;
-//            currentSlot = 0;
-//            currentPage = bufferManager.getPage(filePath, currentPageId);
-//        }
-//        return null; // End of file
-//    }
 
     public void close() {
         if (currentPage != null) {

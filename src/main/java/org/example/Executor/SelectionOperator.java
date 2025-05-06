@@ -5,7 +5,7 @@ import org.example.Rows.WorkedOnRow;
 
 public class SelectionOperator implements Operator {
     private final ScanOperator child;
-    private final String selectionValue; // "director"
+    private final String selectionValue; //Filter value for the election operator
 
     public SelectionOperator(ScanOperator child, String selectionValue) {
         this.child = child;
@@ -28,11 +28,11 @@ public class SelectionOperator implements Operator {
                 WorkedOnRow workedOnRow = (WorkedOnRow) row;
                 String category = new String(workedOnRow.getCategory()).trim();
 //                System.out.println("Category candidate: " + category);
+
                 if (category.equals(selectionValue)) {
                     return workedOnRow;
                 }
             }
-            // If not a match, keep looping
         }
     }
 

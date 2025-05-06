@@ -33,6 +33,7 @@ public class RangeSelectionOperator implements Operator {
                 String movieId =  new String(dataRow.getMovieId());
 //                System.out.println(title +"\t" + movieId);
 
+                //Applying on range selection on movie titles.
                 if (title.compareTo(startRange) >= 0 && title.compareTo(endRange) <= 0) {
                     return dataRow;
                 }
