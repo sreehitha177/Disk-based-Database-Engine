@@ -23,7 +23,11 @@
    ```bash
    java -cp out org.example.run_query "start_range" "end_range" buffer_size
 
-6. **Correctness Test**  
+6. **Data Trimmer**  
+   Trimmer.java is a function to trim the data for testing purposes. You should run this three times seperately changing the path of input file(original datasets) and path to output file and also the number of lines of data you want in new dataset to generate mini datasets from the original gigantic dataset
+
+
+7. **Correctness Test**  
    Sqlite command for the query:
    ```sql
    SELECT primaryTitle, primaryName
