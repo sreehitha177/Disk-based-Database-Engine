@@ -7,6 +7,9 @@ import org.example.Executor.*;
 import org.example.Rows.Row;
 import org.example.Rows.TitleNameRow;
 
+import java.io.File;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 
 
 public class run_query {
@@ -57,7 +60,25 @@ public class run_query {
 
             //Final Projection for the output (title, name)
             FinalProjectionOperator finalProjection = new FinalProjectionOperator(join2);
-            System.out.println("Count after final projection:"+finalProjection.countRows());
+//            System.out.println("Count after final projection:"+finalProjection.countRows());
+
+
+            finalProjection.open();  // Required before calling next()
+
+            int cnt = 0;
+            //Writing output to a text file in csv format
+            try (PrintWriter writer = new PrintWriter("output.txt", "UTF-8")) {
+                Row row;
+                while ((row = finalProjection.next()) != null) {
+                    writer.println(row.toString());
+                    cnt++;
+                }
+                System.out.println("Total rows written to file: " + cnt);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            finalProjection.close();
+
 
 
         } catch (Exception e) {

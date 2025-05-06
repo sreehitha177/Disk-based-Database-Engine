@@ -1,6 +1,7 @@
 package org.example.Rows;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 public class TitleNameRow extends Row {
     private final byte[] title; //30 bytes
@@ -31,4 +32,10 @@ public class TitleNameRow extends Row {
     public byte[] getName() {
         return name;
     }
+
+    @Override
+    public String toString() {
+        return new String(title, StandardCharsets.UTF_8) + "," + new String(name, StandardCharsets.UTF_8);
+    }
+
 }
