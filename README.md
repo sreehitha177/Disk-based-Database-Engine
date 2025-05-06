@@ -1,14 +1,51 @@
-Steps to Run the Project:
-1. The build tool we used is MAVEN, so it is recommended to use maven or a tool like IntelliJ which runs files with build tools integrated in the run settings.
-2. The pom.xml file has content for java jdk 8, please edit that accordingly.
-3. Change the file path inside “utilities_new.java” for the title.basics.tsv file, based on where it is stored in your pc or laptop.
-4. Open CMD as admin (for windows, MAC users use corresponding commands in terminal or IntelliJ)
-5. Execute these commands in order:
-           To compile and run the main program:
-             - cd “root directory of project”
-             - mvn clean compile
-             - mvn exec:java -Dexec.mainClass="org.example.utilities_new"
-          To run tests:
-             - mvn test-compile
-             - mvn exec:java -Dexec.mainClass="org.example.TestCases" 
-             - mvn exec:java -Dexec.mainClass="org.example.TestCasesPerformance"
+# Database Design and Query Executor
+
+## Steps to Run the Project
+
+1. **Build Tool**  
+   This project uses **Maven**. It is recommended to use Maven directly, or an IDE like **IntelliJ IDEA** that supports Maven integration through its run settings.
+
+2. **JDK Configuration**  
+   The `pom.xml` is currently set up for **Java JDK 7**. If you're using a different version, please update the JDK version accordingly in the `pom.xml` file.
+
+3. **Compiling the Project**  
+   Use the following command to compile the project:
+   ```bash
+   javac -d out $(find src/main/java -name "*.java")
+
+4. **Pre-processing the data**  
+   Use the following command to pre-process the data:
+   ```bash
+   java -cp out org.example.pre_process "file_path to title.basics.tsv" "file_path to title.principals.tsv" "file_path to name.basics.tsv"
+
+5. **Query Executor**  
+   Use the following command to pre-process the data:
+   ```bash
+   java -cp out org.example.run_query "start_range" "end_range" buffer_size
+
+6. **Correctness Test**  
+   Sqlite command for the query:
+   ```sql
+   SELECT primaryTitle, primaryName
+   FROM movies, people, workedon
+   WHERE primaryTitle >= "A" 
+   AND primaryTitle <= "Z" 
+   AND category = "director" 
+   AND movies.tconst = workedon.tconst 
+   AND workedon.nconst = people.nconst;
+   ```
+   
+   To copy this output to a text file:
+   ```bash
+   sqlite3 fintest.db -header -csv "SELECT primaryTitle, primaryName
+   FROM movies, people, workedon
+   WHERE primaryTitle>='A' AND primaryTitle<='Z' AND category='director' AND movies.tconst=workedon.tconst AND workedon.nconst=people.nconst;" > sql_output.txt
+   ```
+   Sort this file:
+   ```bash
+   sort sql_output.txt > sql_output.sorted.txt
+   ```
+
+
+
+
