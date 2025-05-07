@@ -1,7 +1,7 @@
 package org.example.BufferManagement;
 
-
-//import com.example.utils.BufferUtils;
+// *** new import  ***
+import org.example.metrics.PageCounter;
 
 import org.example.utilities_new;
 
@@ -10,170 +10,151 @@ import java.util.*;
 import java.util.logging.Logger;
 
 public class BufferManagerImplementation implements BufferManager {
-    private  Map<String, PageImplementation> pageTables;
-    private  LinkedHashMap<String, PageImplementation> lruCaches;
-    private final int bufferSize;
-    private final Set<String> dirtyPages;
-    private final Map<String, Integer> filePathCount;
 
-    private static final Logger log = Logger.getLogger(BufferManagerImplementation.class.getName());
+    /* ------------------------------------------------------------------ */
+    private final Map<String, PageImplementation>       pageTables;
+    private final LinkedHashMap<String, PageImplementation> lruCaches;
+    private final int           bufferSize;
+    private final Set<String>   dirtyPages;
+    private final Map<String,Integer> filePathCount;
 
+    private static final Logger log =
+            Logger.getLogger(BufferManagerImplementation.class.getName());
 
     public BufferManagerImplementation(int bufferSize) {
-        super();
-        this.bufferSize = bufferSize;
-        this.pageTables = new HashMap<>();
-        this.lruCaches = new LinkedHashMap<>(bufferSize, 0.75f, true);
-        this.dirtyPages = new HashSet<>();
+        this.bufferSize    = bufferSize;
+        this.pageTables    = new HashMap<>();
+        this.lruCaches     = new LinkedHashMap<>(bufferSize,0.75f,true);
+        this.dirtyPages    = new HashSet<>();
         this.filePathCount = new HashMap<>();
     }
 
+    /* ==================================================================
+                                  Public API
+       ================================================================== */
     @Override
     public synchronized Page getPage(String filePath, int pageId) {
-        String key = filePath+":"+pageId;
+        String key = filePath + ":" + pageId;
+
+        /* ---------- buffer hit --------------------------------------- */
         if (pageTables.containsKey(key)) {
-            PageImplementation page = pageTables.get(key);
-            utilities_new.pinAndUpdateLRU(page,lruCaches,key);
-            return page;
+            PageImplementation pg = pageTables.get(key);
+            utilities_new.pinAndUpdateLRU(pg, lruCaches, key);
+            return pg;
         }
 
+        /* ---------- need a free frame -------------------------------- */
         if (getTotalPages() >= bufferSize && areAllPagesPinned()) {
-            return null;
+            return null;                    // cannot bring the page in
         }
 
-        PageImplementation page = loadPageFromDisk(pageId, filePath);
-        if(page!=null)
-            addToBuffer(page,key,filePath);
-        return page;
+        /* === I/O instrumentation === */
+        PageCounter.incRead();              // count 1 physical read
+
+        /* ---------- read from disk ----------------------------------- */
+        PageImplementation pg = loadPageFromDisk(pageId, filePath);
+        if (pg != null) addToBuffer(pg, key, filePath);
+        return pg;
     }
 
     @Override
     public synchronized Page createPage(String filePath) {
-        if (getTotalPages() >= bufferSize && areAllPagesPinned()) {
-            return null;
-        }
+        if (getTotalPages() >= bufferSize && areAllPagesPinned()) return null;
 
         int newPageId = findNextPageId(filePath);
-        PageImplementation newPage = new PageImplementation(newPageId, 4096); // Default to data page
-
-        addToBuffer(newPage,filePath+":"+newPageId,filePath);
-        return newPage;
-
+        PageImplementation pg = new PageImplementation(newPageId, 4096);
+        addToBuffer(pg, filePath + ":" + newPageId, filePath);
+        return pg;
     }
 
-
-
-    @Override
-    public synchronized void markDirty(String filePath, int pageId) {
-        dirtyPages.add(filePath + ":" + pageId);
+    @Override public synchronized void markDirty(String fp,int pid){
+        dirtyPages.add(fp+":"+pid);
     }
 
-    @Override
-    public synchronized void unpinPage(String filePath, int pageId) {
-        String key = filePath+":"+pageId;
-        if (pageTables.containsKey(key)) {
-            PageImplementation page = pageTables.get(key);
-            if (page != null) {
-                page.unpin();
-            }
-        }
+    @Override public synchronized void unpinPage(String fp,int pid){
+        PageImplementation pg = pageTables.get(fp+":"+pid);
+        if (pg!=null) pg.unpin();
     }
-
-//    @Override
-//    public void force(String filePath) {
-//        flushAllPages(filePath);
-//    }
 
     @Override
     public synchronized void force(String filePath) {
-        try (RandomAccessFile file = new RandomAccessFile(filePath, "rw")) {
-            for (String key : dirtyPages) {
-                if (key.startsWith(filePath + ":")) {
-                    int pageId = Integer.parseInt(key.split(":")[1]);
-                    Page page = pageTables.get(key);
-                    file.seek((long) pageId * 4096);
-                    file.write(page.getData());
-                }
+        try (RandomAccessFile raf = new RandomAccessFile(filePath,"rw")){
+            for (String key : dirtyPages){
+                if (!key.startsWith(filePath + ":")) continue;
+
+                int pageId = Integer.parseInt(key.split(":")[1]);
+                Page pg    = pageTables.get(key);
+
+                /* === I/O instrumentation === */
+                PageCounter.incWrite();     // flush counts as a write
+
+                raf.seek((long) pageId * 4096);
+                raf.write(pg.getData());
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        dirtyPages.removeIf(key -> key.startsWith(filePath + ":"));
+        } catch (IOException e){ e.printStackTrace(); }
+
+        dirtyPages.removeIf(k -> k.startsWith(filePath + ":"));
     }
 
-    private int getTotalPages() {
-        return pageTables.size();
+    /* ==================================================================
+                                 Private helpers
+       ================================================================== */
+    private int  getTotalPages(){ return pageTables.size(); }
+    private boolean areAllPagesPinned(){
+        for (PageImplementation p : pageTables.values())
+            if (p.getPinCount()==0) return false;
+        return true;
     }
 
-    private boolean areAllPagesPinned() {
-        for (PageImplementation page : pageTables.values()) {
-            if (page.getPinCount() == 0) {
-                return false; // There is an unpinned page that can be evicted
-            }
-        }
-        return true; // No unpinned pages, buffer is fully pinned
-    }
-
-    private PageImplementation loadPageFromDisk(int pageId, String filePath) {
-//        try (RandomAccessFile file = new RandomAccessFile(filePath, "r")) {
-//            file.seek((long) pageId * 4096);
-//            byte[] data = new byte[4096];
-//            file.readFully(data);
-//            return new PageImplementation(pageId, data);
-//        } catch (IOException e) {
-//            return new PageImplementation(pageId, 4096);
-//        }
-
-        try (RandomAccessFile file = new RandomAccessFile(filePath, "r")) {
-            file.seek((long) pageId * 4096);
+    private PageImplementation loadPageFromDisk(int pageId,String fp){
+        try (RandomAccessFile f = new RandomAccessFile(fp,"r")){
+            f.seek((long) pageId * 4096);
             byte[] data = new byte[4096];
-            file.readFully(data);
-            return new PageImplementation(pageId, data);
-        } catch (IOException e) {
-            return null;
-        }
+            f.readFully(data);
+            PageImplementation pg = new PageImplementation(pageId, data);
+            pg.setFilePath(fp);
+            return pg;
+        } catch (IOException e){ return null; }
     }
 
-    private void addToBuffer(PageImplementation page, String key, String filePath) {
-        if (getTotalPages() >= bufferSize) {
-            evictPage();
-        }
-
-        pageTables.put(key, page);
-        utilities_new.pinAndUpdateLRU(page,lruCaches,key); // ✅ Use helper function
+    private void addToBuffer(PageImplementation pg,String key,String fp){
+        if (getTotalPages() >= bufferSize) evictPage();
+        pageTables.put(key, pg);
+        utilities_new.pinAndUpdateLRU(pg, lruCaches, key);
     }
 
-    private void evictPage() {
-        Iterator<Map.Entry<String, PageImplementation>> it = lruCaches.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, PageImplementation> entry = it.next();
-            PageImplementation page = entry.getValue();
-            String key = page.getFilePath() + ":" +page.getPid();
-            if (page.getPinCount() == 0) { // Evict only unpinned pages
-                if (dirtyPages.contains(key)) {
-                    writePageToDisk(page, page.getFilePath());
-                    dirtyPages.remove(key);
-                }
-                pageTables.remove(key);
-                it.remove();
-                return;
+    private void evictPage(){
+        Iterator<Map.Entry<String,PageImplementation>> it = lruCaches.entrySet().iterator();
+        while (it.hasNext()){
+            Map.Entry<String,PageImplementation> e = it.next();
+            PageImplementation pg = e.getValue();
+            if (pg.getPinCount() > 0) continue;           // keep pinned pages
+
+            String key = pg.getFilePath() + ":" + pg.getPid();
+            if (dirtyPages.contains(key)){
+                writePageToDisk(pg, pg.getFilePath());
+                dirtyPages.remove(key);
             }
+            pageTables.remove(key);
+            it.remove();
+            return;
         }
-        log.warning(("All pages are pinned, no eviction possible!"));
+        log.warning("All pages are pinned – eviction impossible");
     }
 
-    private void writePageToDisk(Page page, String filePath) {
-        try (RandomAccessFile file = new RandomAccessFile(filePath, "rw")) {
-            file.seek((long) page.getPid() * 4096);
-            file.write(page.getData());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private void writePageToDisk(Page pg,String fp){
+        /* === I/O instrumentation === */
+        PageCounter.incWrite();             // eviction write
+
+        try (RandomAccessFile f = new RandomAccessFile(fp,"rw")){
+            f.seek((long) pg.getPid() * 4096);
+            f.write(pg.getData());
+        } catch (IOException ignored){}
     }
 
-    private int findNextPageId(String filePath) {
-        int maxId = filePathCount.getOrDefault(filePath,0);
-        filePathCount.put(filePath,maxId+1);
-        return maxId;
+    private int findNextPageId(String fp){
+        int id = filePathCount.getOrDefault(fp,0);
+        filePathCount.put(fp,id+1);
+        return id;
     }
 }
