@@ -54,7 +54,9 @@
 
    The tables are taken from the IMDB database Links, available [here](https://developer.imdb.com/non-commercial-datasets/).
 
-   Movies is taken from title.basics.tsv file from the IMDB database. Based on that file, build a table Movies(movieId: char(10), title: char(450)), where       each row is a movie
+   Movies is taken from title.basics.tsv file from the IMDB database. Based on that file, build a table Movies(movieId: char(10), title: char(450)), where       each row is a movie.
+   
    WorkedOn is taken from the title.principals.tsv file. The movieId attribute is the tconst column, the personId attribute is the nconst column, and the       category attribute is the category column.
+   
    People is taken from name.basics.tsv. The personId attribute is the nconst column, and the name attribute is the primaryName column.
 
